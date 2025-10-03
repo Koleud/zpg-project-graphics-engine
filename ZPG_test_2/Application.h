@@ -27,8 +27,11 @@ private:
 	GLFWwindow* window;
 	int width;
 	int height;
-	char* title;
+	const char* title;
 
 public:
+	Application(int width, int height, const char* title);
+	~Application();
+	void Run();
 };
 
