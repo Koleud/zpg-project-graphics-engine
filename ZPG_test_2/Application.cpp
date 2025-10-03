@@ -164,6 +164,7 @@ void Application::Run()
         "   fragColor = vec4(vertexColor, 1.0);"
         "}";
 
+
     // create shaders
     Shader vertex_shader_obj(vertex_shader, GL_VERTEX_SHADER);
     Shader fragment_shader_obj(fragment_shader, GL_FRAGMENT_SHADER);
