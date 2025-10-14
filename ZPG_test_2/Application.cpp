@@ -306,6 +306,39 @@ void Application::Run()
         "}";
 
 
+    const char* vertex_shader_light =
+        "#version 330 core\n"
+        "layout(location = 0) in vec3 vp;"
+        "layout(location = 1) in vec3 vn;" 
+        "uniform mat4 model;"
+        "uniform mat4 view;"
+        "uniform mat4 projection;"
+        "out vec4 worldPosition;"
+        "out vec3 worldNormal;"
+        "void main(void) {"
+        "    gl_Position = projection * view * model * vec4(vp, 1.0);"
+        "    worldPosition = model * vec4(vp, 1.0);"
+        "    worldNormal = mat3(model) * vn;"
+        "}";
+
+    const char* fragment_shader_light =
+        "#version 330 core\n"
+        "in vec4 worldPosition;"
+        "in vec3 worldNormal;"
+        "out vec4 out_Color;"
+        "void main(void) {"
+        "    vec3 lightPosition = vec3(0.0, 0.0, 0.0);"
+        "    vec3 lightToVector = lightPosition - worldPosition.xyz;"
+        "    float dotProduct = max(dot(normalize(lightToVector), normalize(worldNormal)), 0.0);"
+        "    vec4 diffuse = dotProduct * vec4(0.385, 0.647, 0.812, 1.0);"   //dotProduct * (color of light)
+        "    vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);"
+        "    out_Color = ambient + diffuse;"
+        "}";
+
+
+
+
+
     // create shaders
     Shader vertex_shader_obj(vertex_shader, GL_VERTEX_SHADER);
     Shader fragment_shader_obj(fragment_shader, GL_FRAGMENT_SHADER);
@@ -313,11 +346,14 @@ void Application::Run()
     Shader vertex_shader_without_color_obj(vertex_shader_without_color, GL_VERTEX_SHADER);
     Shader fragment_shader_without_color_obj(fragment_shader_without_color, GL_FRAGMENT_SHADER);
 
+    Shader vertex_shader_light_obj(vertex_shader_light, GL_VERTEX_SHADER);
+    Shader fragment_shader_light_obj(fragment_shader_light, GL_FRAGMENT_SHADER);
 
 
     // create shader program
     ShaderProgram shader_program_1(vertex_shader_obj, fragment_shader_obj, &camera);
     ShaderProgram shader_program_without_color(vertex_shader_without_color_obj, fragment_shader_without_color_obj, &camera);
+    ShaderProgram shader_program_light(vertex_shader_light_obj, fragment_shader_light_obj, &camera);
 
 
 	//create scenes
@@ -342,7 +378,7 @@ void Application::Run()
 	std::vector<DrawableObject> spheres;
     for (int i = 0; i < 4; i++)
     {
-        DrawableObject sphere(&shader_program_without_color, &sphereModel);
+        DrawableObject sphere(&shader_program_light, &sphereModel);
 		spheres.push_back(sphere);
     }
 
@@ -412,6 +448,12 @@ void Application::Run()
     shader_program_without_color.SetUniform("view", view);
     shader_program_without_color.SetUniform("projection", projection);
 
+    shader_program_light.Use();
+    shader_program_light.SetUniform("view", view);
+    shader_program_light.SetUniform("projection", projection);
+
+
+
 
 
 	// set clear color
@@ -440,6 +482,7 @@ void Application::Run()
     
     camera.Attach(&shader_program_1);
 	camera.Attach(&shader_program_without_color);
+	camera.Attach(&shader_program_light);
 
     glEnable(GL_DEPTH_TEST);//Do depth comparisons and update the depth buffer.
     // hlavní smyčka
@@ -474,35 +517,10 @@ void Application::Run()
         }
 
 
-		
-
-
-
-
-
-        /*
-        triangle.Draw();
-		triangle.SetRotation(glm::vec3(0.5f, 0.0f, angle));
-
-		square.Draw();
-
-		square.SetPosition(glm::vec3(0.5f, 0.0f, 0.0f));
-        //square.SetScale(glm::vec3((0.0f, 0.0f, 0.5f)));
-        square.SetRotation(glm::vec3(0.0f, 0.0f, -angle), glm::vec3(0.3f, 0.0f, 0.0f));
-
-        square_2.Draw();
-        square_2.SetRotation(glm::vec3(0.0f, 0.0f, angle));
-		square_2.SetPosition(glm::vec3(-0.5f, 0.0f, 0.0f));
-
-
-        sphere_obj.Draw();
-
-		sphere_obj.SetPosition(glm::vec3(0.5f, 0.5f, 0.0f));
-		sphere_obj.SetScale(glm::vec3(0.2f, 0.2f, 0.0f));
-        */
-
+		//check for errors in shaders
         shader_program_1.CheckCompileError();
         shader_program_without_color.CheckCompileError();
+		shader_program_light.CheckCompileError();
 
         // update events
         glfwPollEvents();
