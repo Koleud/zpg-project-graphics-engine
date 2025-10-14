@@ -10,49 +10,33 @@
 #include "ShaderProgram.h"
 #include "Shader.h"
 
-ShaderProgram::ShaderProgram(const std::vector<float>& points, const Shader& vertex_shader, const Shader& fragment_shader, int vertexCount)
+ShaderProgram::ShaderProgram(const Shader& vertex_shader, const Shader& fragment_shader, Camera* cam)
 {
+	camera = cam;
+
 	program_id = glCreateProgram();
 	glAttachShader(program_id, vertex_shader.id);
 	glAttachShader(program_id, fragment_shader.id);
 	glLinkProgram(program_id);
 
 	CheckCompileError();
-
-	this->vertexCount = vertexCount;
-	// VBO
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), points.data(), GL_STATIC_DRAW);
-
-	//VAO
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (GLvoid*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
 }
 
 ShaderProgram::~ShaderProgram()
 {
 	glDeleteProgram(program_id);
-	glDeleteBuffers(1, &VBO);
-	glDeleteVertexArrays(1, &VAO);
+}
+
+void ShaderProgram::Update()
+{
+	glm::mat4 view = camera->GetViewMatrix();
+	Use();
+	SetUniform("view", view);
 }
 
 void ShaderProgram::Use()
 {
 	glUseProgram(program_id);
-}
-void ShaderProgram::Draw()
-{
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 }
 
 void ShaderProgram::CheckCompileError()
@@ -67,4 +51,40 @@ void ShaderProgram::CheckCompileError()
 		fprintf(stderr, "Compile failure in shader:\n%s\n", strInfoLog);
 		delete[] strInfoLog;
 	}
+}
+
+void ShaderProgram::SetUniform(const char* name, const glm::mat4& matrix)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+void ShaderProgram::SetUniform(const char* name, const float value)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniform1f(loc, value);
+}
+
+void ShaderProgram::SetUniform(const char* name, const int value)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniform1i(loc, value);
+}
+
+void ShaderProgram::SetUniform(const char* name, const glm::vec3& vector)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniform3fv(loc, 1, glm::value_ptr(vector));
+}
+
+void ShaderProgram::SetUniform(const char* name, const glm::vec4& vector)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniform4fv(loc, 1, glm::value_ptr(vector));
+}
+
+void ShaderProgram::SetUniform(const char* name, const glm::mat3& matrix)
+{
+	GLuint loc = glGetUniformLocation(program_id, name);
+	glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(matrix));
 }
