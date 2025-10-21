@@ -34,10 +34,13 @@
 #include "Models/bushes.h"
 #include "Models/plain.h"
 #include "Models/sphere.h"
+#include "Light.h"
+#include "FileUtils.h"
 
 int scene1_initialized = 0;
 int scene2_initialized = 0;
 int scene3_initialized = 1;
+int scene4_initialized = 0;
 
 static void error_callback(int error, const char* description) { fputs(description, stderr); }
 
@@ -60,18 +63,28 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene1_initialized = 1;
         scene2_initialized = 0;
         scene3_initialized = 0;
+        scene4_initialized = 0;
     }
     if (key == GLFW_KEY_2)
     {
         scene1_initialized = 0;
         scene2_initialized = 1;
         scene3_initialized = 0;
+        scene4_initialized = 0;
     }
     if (key == GLFW_KEY_3)
     {
         scene1_initialized = 0;
         scene2_initialized = 0;
         scene3_initialized = 1;
+        scene4_initialized = 0;
+    }
+    if (key == GLFW_KEY_4)
+    {
+        scene1_initialized = 0;
+        scene2_initialized = 0;
+        scene3_initialized = 0;
+        scene4_initialized = 1;
     }
 }
 
@@ -232,7 +245,7 @@ void Application::Run()
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    // vrcholy trojúhelníku
+
     float points[] = {
         0.0f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
         0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f,
@@ -250,91 +263,41 @@ void Application::Run()
 
     float points_с_2[] = {
         // X      Y      Z      R     G     B
-        -0.15f, -0.10f, 0.0f,  1.0f, 0.0f, 1.0f,   // фиолетовый
-         0.15f, -0.10f, 0.0f,  0.0f, 1.0f, 1.0f,   // голубой
-         0.15f,  0.10f, 0.0f,  0.0f, 1.0f, 0.5f,   // зеленовато-голубой
+        -0.15f, -0.10f, 0.0f,  1.0f, 0.0f, 1.0f,
+         0.15f, -0.10f, 0.0f,  0.0f, 1.0f, 1.0f,
+         0.15f,  0.10f, 0.0f,  0.0f, 1.0f, 0.5f,
 
-        -0.15f, -0.10f, 0.0f,  1.0f, 0.0f, 1.0f,   // фиолетовый
-         0.15f,  0.10f, 0.0f,  0.0f, 1.0f, 0.5f,   // зеленовато-голубой
-        -0.15f,  0.10f, 0.0f,  1.0f, 0.5f, 0.0f    // оранжево-розовый
+        -0.15f, -0.10f, 0.0f,  1.0f, 0.0f, 1.0f,
+         0.15f,  0.10f, 0.0f,  0.0f, 1.0f, 0.5f,
+        -0.15f,  0.10f, 0.0f,  1.0f, 0.5f, 0.0f
     };
 
 
-    // shadery
-    const char* vertex_shader =
-        "#version 330\n"
-        "layout(location=0) in vec3 vp;"
-        "layout(location = 1) in vec3 vc;"
-        "uniform mat4 model;"    
-        "uniform mat4 view;"        
-        "uniform mat4 projection;"
-        "out vec3 vertexColor;"
-        "void main () {"
-        "   gl_Position = projection * view * model * vec4(vp, 1.0);"
-      //"   gl_Position = vec4(vp, 1.0);"
-        "   vertexColor = vc; "
-        "}";
-
-    const char* fragment_shader =
-        "#version 330\n"
-        "in vec3 vertexColor;"
-        "out vec4 fragColor;"
-        "void main () {"
-        "   fragColor = vec4(vertexColor, 1.0);"
-        "}";
-
-    // shadery
-    const char* vertex_shader_without_color =
-        "#version 330\n"
-        "layout(location=0) in vec3 vp;"
-        "layout(location = 1) in vec3 vc;"
-        "uniform mat4 model;"
-        "uniform mat4 view;"
-        "uniform mat4 projection;"
-        "out vec3 vertexColor;"
-        "void main () {"
-        "   gl_Position = projection * view * model * vec4(vp, 1.0);"
-        "   vertexColor = vec3(0.4, 0.4, 0.4); "
-        "}";
-
-    const char* fragment_shader_without_color =
-        "#version 330\n"
-        "in vec3 vertexColor;"
-        "out vec4 fragColor;"
-        "void main () {"
-        "   fragColor = vec4(0.4, 0.4, 0.4, 1.0);"
-        "}";
+    //Shaders
+ 
+    //Classic shaders (with color attribute)
+    const std::string vertex_shader = ReadFileToString("Shaders\\classic.vert");
+    const std::string fragment_shader = ReadFileToString("Shaders\\classic.frag");
 
 
-    const char* vertex_shader_light =
-        "#version 330 core\n"
-        "layout(location = 0) in vec3 vp;"
-        "layout(location = 1) in vec3 vn;" 
-        "uniform mat4 model;"
-        "uniform mat4 view;"
-        "uniform mat4 projection;"
-        "out vec4 worldPosition;"
-        "out vec3 worldNormal;"
-        "void main(void) {"
-        "    gl_Position = projection * view * model * vec4(vp, 1.0);"
-        "    worldPosition = model * vec4(vp, 1.0);"
-        "    worldNormal = mat3(model) * vn;"
-        "}";
+    //Constant color shaders (without lighting)
+    const std::string vertex_shader_without_color = ReadFileToString("Shaders\\constant.vert");
+    const std::string fragment_shader_without_color = ReadFileToString("Shaders\\constant.frag");
 
-    const char* fragment_shader_light =
-        "#version 330 core\n"
-        "in vec4 worldPosition;"
-        "in vec3 worldNormal;"
-        "out vec4 out_Color;"
-        "void main(void) {"
-        "    vec3 lightPosition = vec3(0.0, 0.0, 0.0);"
-        "    vec3 lightToVector = lightPosition - worldPosition.xyz;"
-        "    float dotProduct = max(dot(normalize(lightToVector), normalize(worldNormal)), 0.0);"
-        "    vec4 diffuse = dotProduct * vec4(0.385, 0.647, 0.812, 1.0);"   //dotProduct * (color of light)
-        "    vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);"
-        "    out_Color = ambient + diffuse;"
-        "}";
 
+    //Lambert's shading model shaders
+    const std::string vertex_shader_light = ReadFileToString("Shaders\\lamb.vert");
+    const std::string fragment_shader_light = ReadFileToString("Shaders\\lamb.frag");
+
+
+    //Phong's shading model shaders
+    const std::string vertex_shader_light_2 = ReadFileToString("Shaders\\phong.vert");
+    const std::string fragment_shader_light_2 = ReadFileToString("Shaders\\phong.frag");
+
+
+    //Blinn-Phong's shading model shaders
+    const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");
+    const std::string fragment_shader_light_3 = ReadFileToString("Shaders\\blinnphong.frag");
 
 
 
@@ -349,17 +312,26 @@ void Application::Run()
     Shader vertex_shader_light_obj(vertex_shader_light, GL_VERTEX_SHADER);
     Shader fragment_shader_light_obj(fragment_shader_light, GL_FRAGMENT_SHADER);
 
+	Shader vertex_shader_light_2_obj(vertex_shader_light_2, GL_VERTEX_SHADER);
+	Shader fragment_shader_light_2_obj(fragment_shader_light_2, GL_FRAGMENT_SHADER);
+
+    Shader vertex_shader_light_3_obj(vertex_shader_light_3, GL_VERTEX_SHADER);
+    Shader fragment_shader_light_3_obj(fragment_shader_light_3, GL_FRAGMENT_SHADER);
+
 
     // create shader program
     ShaderProgram shader_program_1(vertex_shader_obj, fragment_shader_obj, &camera);
     ShaderProgram shader_program_without_color(vertex_shader_without_color_obj, fragment_shader_without_color_obj, &camera);
     ShaderProgram shader_program_light(vertex_shader_light_obj, fragment_shader_light_obj, &camera);
+	ShaderProgram shader_program_light_2(vertex_shader_light_2_obj, fragment_shader_light_2_obj, &camera);
+	ShaderProgram shader_program_light_3(vertex_shader_light_3_obj, fragment_shader_light_3_obj, &camera);
 
 
 	//create scenes
     Scene scene_1 = Scene();
     Scene scene_2 = Scene();
     Scene scene_3 = Scene();
+    Scene scene_4 = Scene();
 
 
 
@@ -375,12 +347,17 @@ void Application::Run()
 	DrawableObject triangle(&shader_program_1, &triangleModel);
 
 
+    //create four spheres with different shaders
 	std::vector<DrawableObject> spheres;
-    for (int i = 0; i < 4; i++)
-    {
-        DrawableObject sphere(&shader_program_light, &sphereModel);
-		spheres.push_back(sphere);
-    }
+    DrawableObject sphere_1(&shader_program_without_color, &sphereModel);
+    spheres.push_back(sphere_1);
+    DrawableObject sphere_2(&shader_program_light, &sphereModel);
+    spheres.push_back(sphere_2);
+    DrawableObject sphere_3(&shader_program_light_2, &sphereModel);
+    spheres.push_back(sphere_3);
+    DrawableObject sphere_4(&shader_program_light_3, &sphereModel);
+    spheres.push_back(sphere_4);
+
 
 
 
@@ -409,6 +386,11 @@ void Application::Run()
 	plain.transform.AddTransformation(new Scale(glm::vec3(50.0f, 1.0f, 50.0f)));
 
 
+    //create Solar system scene objects
+    DrawableObject sun(&shader_program_1, &sphereModel);
+    DrawableObject earth(&shader_program_1, &sphereModel);
+    DrawableObject moon(&shader_program_1, &sphereModel);
+
 
 	//add objects to scenes
 
@@ -434,6 +416,12 @@ void Application::Run()
     scene_3.AddObject(&plain);
 
 
+        // scene 4 - solar system
+    scene_4.AddObject(&sun);
+    scene_4.AddObject(&earth);
+    scene_4.AddObject(&moon);
+
+
 
 	// create view and projection matrices
 	glm::mat4 view = camera.GetViewMatrix();
@@ -448,12 +436,28 @@ void Application::Run()
     shader_program_without_color.SetUniform("view", view);
     shader_program_without_color.SetUniform("projection", projection);
 
+
+
+    Light mainLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f);
+
+
     shader_program_light.Use();
+    mainLight.ApplyToShader(shader_program_light);
     shader_program_light.SetUniform("view", view);
     shader_program_light.SetUniform("projection", projection);
+    
+    shader_program_light_2.Use();
+    mainLight.ApplyToShader(shader_program_light_2);
+	shader_program_light_2.SetUniform("view", view);
+	shader_program_light_2.SetUniform("projection", projection);
+	shader_program_light_2.SetUniform("cameraPosition", camera.GetPosition());
+    
 
-
-
+    shader_program_light_3.Use();
+	mainLight.ApplyToShader(shader_program_light_3);
+    shader_program_light_3.SetUniform("view", view);
+    shader_program_light_3.SetUniform("projection", projection);
+    shader_program_light_3.SetUniform("cameraPosition", camera.GetPosition());
 
 
 	// set clear color
@@ -461,19 +465,37 @@ void Application::Run()
     //glClearColor(0.2f, 0.4f, 0.7f, 1.0f);
 
 	float angle = 0.0f;
+    float angle_2 = 0.0f;
 
 	//some pre-transofrmations
  
-        //scene 1
+    //scene 1 - triangle
     scene_1.GetObject(0)->transform.AddTransformation(new Translate(glm::vec3(0.5f, 0.5f, 0.0f)));
     scene_1.GetObject(0)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, 0.0f, angle)));
     scene_1.GetObject(0)->transform.AddTransformation(new Scale(glm::vec3(0.5f, 0.5f, 0.5f)));
 
-	    //scene 2 - spheres
+
+	//scene 2 - spheres
     scene_2.GetObject(0)->transform.AddTransformation(new Translate(glm::vec3(-2.5f, 0.0f, 0.0f)));
     scene_2.GetObject(1)->transform.AddTransformation(new Translate(glm::vec3(0.0f, -2.5f, 0.0f)));
     scene_2.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(2.5f, 0.0f, 0.0f)));
     scene_2.GetObject(3)->transform.AddTransformation(new Translate(glm::vec3(0.0f, 2.5f, 0.0f)));
+
+
+    //scene 4 - solar system
+    
+    //earth
+    scene_4.GetObject(1)->transform.AddTransformation(new Scale(glm::vec3(0.4f, 0.4f, 0.4f)));
+    scene_4.GetObject(1)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(1)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
+    scene_4.GetObject(1)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+
+    //moon
+    scene_4.GetObject(2)->transform.AddTransformation(new Scale(glm::vec3(0.1f, 0.1f, 0.1f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(1.5f, 0.0f, 0.0f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
 
 
 
@@ -483,6 +505,8 @@ void Application::Run()
     camera.Attach(&shader_program_1);
 	camera.Attach(&shader_program_without_color);
 	camera.Attach(&shader_program_light);
+	camera.Attach(&shader_program_light_2);
+	camera.Attach(&shader_program_light_3);
 
     glEnable(GL_DEPTH_TEST);//Do depth comparisons and update the depth buffer.
     // hlavní smyčka
@@ -496,7 +520,8 @@ void Application::Run()
 
         inputCamera(window, camera, deltaTime);
 
-		angle += 0.01f;
+		angle += 0.003f;
+        angle_2 += 0.01f;
 
 
         if (scene1_initialized)
@@ -514,13 +539,28 @@ void Application::Run()
         if (scene3_initialized)
         {
             scene_3.DrawAll();
+        }        
+
+        if (scene4_initialized)
+        {
+            scene_4.DrawAll();
+
+            scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
+            scene_4.GetObject(1)->transform.UpdateTransformation(3, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
+
+
+            scene_4.GetObject(2)->transform.UpdateTransformation(2, new Rotate(glm::vec3(0.0f, angle_2, 0.0f)));
+            scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));
         }
+
 
 
 		//check for errors in shaders
         shader_program_1.CheckCompileError();
         shader_program_without_color.CheckCompileError();
 		shader_program_light.CheckCompileError();
+		shader_program_light_2.CheckCompileError();
+		shader_program_light_3.CheckCompileError();
 
         // update events
         glfwPollEvents();

@@ -24,5 +24,6 @@ public:
 
 	glm::mat4 GetViewMatrix() const;
 	glm::vec3 GetTargetDirection() const;
+	glm::vec3 GetPosition() const;
 };
 

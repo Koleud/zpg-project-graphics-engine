@@ -134,6 +134,8 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CompositeTransformation.cpp" />
     <ClCompile Include="DrawableObject.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Observer.cpp" />
     <ClCompile Include="Rotate.cpp" />
@@ -151,6 +153,8 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CompositeTransformation.h" />
     <ClInclude Include="DrawableObject.h" />
+    <ClInclude Include="FileUtils.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Models\bushes.h" />
     <ClInclude Include="Models\gift.h" />

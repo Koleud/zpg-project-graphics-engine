@@ -15,6 +15,17 @@ Shader::Shader(const char* source, GLenum shaderType)
     CheckCompileError();
 }
 
+Shader::Shader(const std::string source, GLenum shaderType)
+{
+    type = shaderType;
+    id = glCreateShader(type);
+    const char* src = source.c_str();
+    glShaderSource(id, 1, &src, NULL);
+    glCompileShader(id);
+    // kontrola kompilace shaderu
+    CheckCompileError();
+}
+
 Shader::~Shader()
 {
 	glDeleteShader(id);

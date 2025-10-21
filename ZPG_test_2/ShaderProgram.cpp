@@ -30,8 +30,10 @@ ShaderProgram::~ShaderProgram()
 void ShaderProgram::Update()
 {
 	glm::mat4 view = camera->GetViewMatrix();
+	glm::vec3 camPos = camera->GetPosition();
 	Use();
 	SetUniform("view", view);
+	SetUniform("cameraPosition", camPos);
 }
 
 void ShaderProgram::Use()

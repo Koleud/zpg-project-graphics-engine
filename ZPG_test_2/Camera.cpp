@@ -54,3 +54,8 @@ glm::vec3 Camera::GetTargetDirection() const
 {
 	return glm::normalize(center - eye);
 }
+
+glm::vec3 Camera::GetPosition() const
+{
+	return eye;
+}
