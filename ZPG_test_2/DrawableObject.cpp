@@ -25,3 +25,4 @@ void DrawableObject::Draw()
 	shaderProgram->SetUniform("model", mvp);
 	model->Draw();
 }
+

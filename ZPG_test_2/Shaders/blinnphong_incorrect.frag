@@ -19,19 +19,19 @@ out vec4 fragColor;
 
 void main() {
     vec3 norm = normalize(worldNormal);
-    vec3 viewDir = normalize(cameraPosition - worldPosition.xyz);
+    vec3 viewDir = normalize(worldPosition.xyz);
     vec3 totalLight = vec3(0.1); // ambient light
 
     for (int i = 0; i < lightCount; ++i) {
         vec3 lightDir = normalize(lights[i].position - worldPosition.xyz);
         vec3 halfwayDir = normalize(lightDir + viewDir);
 
-        // diffuse
-        float diff = max(dot(norm, lightDir), 0.0);
+        // diffuse (without max)
+        float diff = dot(norm, lightDir); 
         vec3 diffuse = diff * lights[i].color * lights[i].intensity;
 
-        // specular
-        float spec = pow(max(dot(norm, halfwayDir), 0.0), 32.0);
+        // specular (неправильно: без max)
+        float spec = pow(dot(norm, halfwayDir), 32.0);
         vec3 specular = spec * vec3(1.0) * lights[i].intensity;
 
         totalLight += diffuse + specular;

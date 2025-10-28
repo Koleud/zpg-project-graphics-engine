@@ -31,9 +31,12 @@ void ShaderProgram::Update()
 {
 	glm::mat4 view = camera->GetViewMatrix();
 	glm::vec3 camPos = camera->GetPosition();
+    glm::mat4 projection = camera->GetProjectionMatrix();
+
 	Use();
 	SetUniform("view", view);
 	SetUniform("cameraPosition", camPos);
+    SetUniform("projection", projection);
 }
 
 void ShaderProgram::Use()
@@ -89,4 +92,18 @@ void ShaderProgram::SetUniform(const char* name, const glm::mat3& matrix)
 {
 	GLuint loc = glGetUniformLocation(program_id, name);
 	glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+void ShaderProgram::SetLight(const std::vector<SceneLight>& lights)
+{
+    int lightCount = static_cast<int>(lights.size());
+    SetUniform("lightCount", lightCount);
+
+    for (int i = 0; i < lightCount; i++)
+    {
+        std::string prefix = "lights[" + std::to_string(i) + "]";
+        SetUniform((prefix + ".position").c_str(), lights[i].GetWorldPosition());
+        SetUniform((prefix + ".color").c_str(), lights[i].color);
+        SetUniform((prefix + ".intensity").c_str(), lights[i].intensity);
+    }
 }

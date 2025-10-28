@@ -30,8 +30,10 @@ private:
 	const char* title;
 
 public:
+
 	Application(int width, int height, const char* title);
-	~Application();
+	~Application(); 
 	void Run();
+    void UpdateApp(int width, int height);
 };
 

@@ -12,6 +12,9 @@ private:
 	glm::vec3 center;
 	glm::vec3 up;
 	float speed = 0.05f;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+
 public:
 	Camera(const glm::vec3& eye, const glm::vec3& center);
 
@@ -25,5 +28,10 @@ public:
 	glm::mat4 GetViewMatrix() const;
 	glm::vec3 GetTargetDirection() const;
 	glm::vec3 GetPosition() const;
+
+
+    void UpdateViewMatrix();
+    void UpdateProjection(float aspectRatio);
+    glm::mat4 GetProjectionMatrix() const;
 };
 

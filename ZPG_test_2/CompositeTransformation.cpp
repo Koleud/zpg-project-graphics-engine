@@ -17,11 +17,8 @@ glm::mat4 CompositeTransformation::GetMatrix() const
 	return result;
 }
 
-void CompositeTransformation::UpdateTransformation(int index, Transformation* newTrans)
+void CompositeTransformation::UpdateTransformation(float deltaTime)
 {
-	if (index >= 0 && index < transformations.size()) 
-	{
-		delete transformations[index];
-		transformations[index] = newTrans;
-	}
+    for (auto* t : transformations)
+        t->Update(deltaTime);
 }

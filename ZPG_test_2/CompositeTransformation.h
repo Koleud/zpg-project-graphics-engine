@@ -12,6 +12,6 @@ public:
 
 	glm::mat4 GetMatrix() const override;
 
-	void UpdateTransformation(int index, Transformation* newTrans);
+	void UpdateTransformation(float deltaTime);
 };
 

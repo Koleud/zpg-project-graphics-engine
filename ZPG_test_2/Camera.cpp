@@ -59,3 +59,20 @@ glm::vec3 Camera::GetPosition() const
 {
 	return eye;
 }
+
+void Camera::UpdateViewMatrix()
+{
+    viewMatrix = glm::lookAt(eye, center, up);
+    Notify();
+}
+
+void Camera::UpdateProjection(float aspectRatio)
+{
+    projectionMatrix = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+    Notify();
+}
+
+glm::mat4 Camera::GetProjectionMatrix() const
+{
+    return projectionMatrix;
+}

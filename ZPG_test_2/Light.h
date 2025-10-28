@@ -1,16 +1,22 @@
 #include <glm/glm.hpp>
-#include "ShaderProgram.h"
+#include "CompositeTransformation.h"
 
 #pragma once
-class Light
+class SceneLight
 {
 private:
-	glm::vec3 position;
-	glm::vec3 color;
-	float intensity;
-public:
-	Light(const glm::vec3& pos, const glm::vec3& col, float intens);
 
-	void ApplyToShader(ShaderProgram& shader);
+public:
+    glm::vec3 position;
+    glm::vec3 color;
+    float intensity;
+
+    CompositeTransformation transform;
+
+    SceneLight(const glm::vec3& pos, const glm::vec3& col, float intens);
+
+    glm::vec3 GetWorldPosition() const;
+
+	//void ApplyToShader(ShaderProgram& shader);
 };
 

@@ -36,6 +36,8 @@
 #include "Models/sphere.h"
 #include "Light.h"
 #include "FileUtils.h"
+#include "DynamicRotate.h"
+#include "DynamicTranslate.h"
 
 int scene1_initialized = 0;
 int scene2_initialized = 0;
@@ -92,9 +94,13 @@ static void window_focus_callback(GLFWwindow* window, int focused) { printf("win
 
 static void window_iconify_callback(GLFWwindow* window, int iconified) { printf("window_iconify_callback \n"); }
 
-static void window_size_callback(GLFWwindow* window, int width, int height) {
-	printf("resize %d, %d \n", width, height);
-	glViewport(0, 0, width, height);
+static void window_size_callback(GLFWwindow* window, int width, int height)
+{
+    printf("resize %d, %d \n", width, height);
+    glViewport(0, 0, width, height);
+    float aspect = (float)width / (float)height;
+
+    camera.UpdateProjection(aspect);
 }
 
 static void cursor_callback(GLFWwindow* window, double x, double y) 
@@ -162,23 +168,6 @@ float randFloat(float min, float max)
 }
 
 
-/*
-
-//GLM test
-
-// Projection matrix : 45� Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.01f, 100.0f);
-
-// Camera matrix
-glm::mat4 View = glm::lookAt(
-    glm::vec3(10, 10, 10), // Camera is at (4,3,-3), in World Space
-    glm::vec3(0, 0, 0), // and looks at the origin
-    glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-);
-// Model matrix : an identity matrix (model will be at the origin)
-glm::mat4 Model = glm::mat4(1.0f);
-
-*/
 
 Application::Application(int width, int height, const char* title)
 {
@@ -201,6 +190,7 @@ void Application::Run()
     }
 
     window = glfwCreateWindow(width, height, title, NULL, NULL);
+
 
     // OpenGL (3.3 Core Profile)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -296,7 +286,7 @@ void Application::Run()
 
 
     //Blinn-Phong's shading model shaders
-    const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");
+    const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");   //_incorrect
     const std::string fragment_shader_light_3 = ReadFileToString("Shaders\\blinnphong.frag");
 
 
@@ -366,7 +356,7 @@ void Application::Run()
 	std::vector<DrawableObject> bushes_list;
 	for (int i = 0; i < 50; i++)
 	{
-		DrawableObject tree(&shader_program_1, &treeModel);
+		DrawableObject tree(&shader_program_light, &treeModel);
         tree.transform.AddTransformation(new Rotate(glm::vec3(0.0f, randFloat(0.0f, 360.0f), 0.0f)));
 		tree.transform.AddTransformation(new Translate(glm::vec3(randFloat(-30.0f, 30.0f), 0.0f, randFloat(-30.0f, 30.0f))));
 		float scale = randFloat(0.3f, 1.0f);
@@ -374,7 +364,7 @@ void Application::Run()
 		trees.push_back(tree);
 
 		
-		DrawableObject bush(&shader_program_1, &bushesModel);
+		DrawableObject bush(&shader_program_light, &bushesModel);
 		bush.transform.AddTransformation(new Rotate(glm::vec3(0.0f, randFloat(0.0f, 360.0f), 0.0f)));
 		bush.transform.AddTransformation(new Translate(glm::vec3(randFloat(-30.0f, 30.0f), 0.0f, randFloat(-30.0f, 30.0f))));
 		float scale_bush = randFloat(0.5f, 1.5f);
@@ -382,7 +372,7 @@ void Application::Run()
 		bushes_list.push_back(bush);
 	}
 
-	DrawableObject plain(&shader_program_1, &plainModel);
+	DrawableObject plain(&shader_program_light, &plainModel);
 	plain.transform.AddTransformation(new Scale(glm::vec3(50.0f, 1.0f, 50.0f)));
 
 
@@ -426,6 +416,8 @@ void Application::Run()
 	// create view and projection matrices
 	glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+    //glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 100.0f);
+    //glm::mat4 projection = glm::perspective(glm::radians(130.0f), (float)width / (float)height, 0.1f, 100.0f);
 
 	// pass matrices to shader
 	shader_program_1.Use();
@@ -437,24 +429,53 @@ void Application::Run()
     shader_program_without_color.SetUniform("projection", projection);
 
 
+    std::vector<SceneLight> lights;
+    SceneLight mainLight(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f);
 
-    Light mainLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f);
+    //mainLight.transform.AddTransformation(new Translate(glm::vec3(0.0f, 5.0f, 0.0f)));
+
+    SceneLight secondaryLight(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.7f);
+
+    lights.emplace_back(mainLight);
+    lights.emplace_back(secondaryLight);
+
+    std::vector<SceneLight> fireflys;
+    SceneLight mainLight_forest(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
+    SceneLight secondaryLight_forest(glm::vec3(20.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
+    SceneLight secondaryLight_forest_1(glm::vec3(10.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
+    SceneLight secondaryLight_forest_2(glm::vec3(15.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
+    SceneLight secondaryLight_forest_3(glm::vec3(25.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
+
+    mainLight_forest.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
+    secondaryLight_forest.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
+    secondaryLight_forest_1.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.01f)));
+    secondaryLight_forest_2.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.01f, 0.0f)));
+    secondaryLight_forest_3.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.01f, 0.0f)));
+
+    fireflys.emplace_back(mainLight_forest);
+    fireflys.emplace_back(secondaryLight_forest);
+    fireflys.emplace_back(secondaryLight_forest_1);
+    fireflys.emplace_back(secondaryLight_forest_2);
+    fireflys.emplace_back(secondaryLight_forest_3);
 
 
     shader_program_light.Use();
-    mainLight.ApplyToShader(shader_program_light);
+    //mainLight.ApplyToShader(shader_program_light);
+    shader_program_light.SetLight(fireflys);
     shader_program_light.SetUniform("view", view);
     shader_program_light.SetUniform("projection", projection);
     
     shader_program_light_2.Use();
-    mainLight.ApplyToShader(shader_program_light_2);
+    //mainLight.ApplyToShader(shader_program_light_2);
+    shader_program_light_2.SetLight(lights);
 	shader_program_light_2.SetUniform("view", view);
 	shader_program_light_2.SetUniform("projection", projection);
 	shader_program_light_2.SetUniform("cameraPosition", camera.GetPosition());
     
 
     shader_program_light_3.Use();
-	mainLight.ApplyToShader(shader_program_light_3);
+	//mainLight.ApplyToShader(shader_program_light_3);
+    shader_program_light_3.SetLight(lights);
     shader_program_light_3.SetUniform("view", view);
     shader_program_light_3.SetUniform("projection", projection);
     shader_program_light_3.SetUniform("cameraPosition", camera.GetPosition());
@@ -470,8 +491,8 @@ void Application::Run()
 	//some pre-transofrmations
  
     //scene 1 - triangle
-    scene_1.GetObject(0)->transform.AddTransformation(new Translate(glm::vec3(0.5f, 0.5f, 0.0f)));
-    scene_1.GetObject(0)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, 0.0f, angle)));
+    //scene_1.GetObject(0)->transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
+    scene_1.GetObject(0)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 0.0f, 1.0f), 0.01f));
     scene_1.GetObject(0)->transform.AddTransformation(new Scale(glm::vec3(0.5f, 0.5f, 0.5f)));
 
 
@@ -501,12 +522,21 @@ void Application::Run()
 
     float lastFrame = 0.0f;
     float deltaTime = 0.0f;
-    
+
+    float aspect = (float)width / (float)height;
+    camera.UpdateProjection(aspect);
+
     camera.Attach(&shader_program_1);
 	camera.Attach(&shader_program_without_color);
 	camera.Attach(&shader_program_light);
 	camera.Attach(&shader_program_light_2);
 	camera.Attach(&shader_program_light_3);
+
+
+    /*if (glfwSetWindowSizeCallback(window, window_size_callback))
+    {
+
+    }*/
 
     glEnable(GL_DEPTH_TEST);//Do depth comparisons and update the depth buffer.
     // hlavní smyčka
@@ -528,16 +558,26 @@ void Application::Run()
         {
             scene_1.DrawAll();
 
-			scene_1.GetObject(0)->transform.UpdateTransformation(0, (new Rotate(glm::vec3(0.0f, 0.0f, angle))));
+			//scene_1.GetObject(0)->transform.UpdateTransformation(0, (new Rotate(glm::vec3(0.0f, 0.0f, angle))));
+            scene_1.GetObject(0)->transform.UpdateTransformation(1.0f);
         }
 
         if (scene2_initialized)
         {
-            scene_2.DrawAll();
+            scene_2.DrawAll();           
         }
 
         if (scene3_initialized)
         {
+            fireflys[0].transform.UpdateTransformation(1.0f);
+            fireflys[1].transform.UpdateTransformation(1.0f);
+            fireflys[2].transform.UpdateTransformation(1.0f);
+            fireflys[3].transform.UpdateTransformation(1.0f);
+            fireflys[4].transform.UpdateTransformation(1.0f);
+
+            shader_program_light.Use();
+            shader_program_light.SetLight(fireflys);
+
             scene_3.DrawAll();
         }        
 
@@ -545,12 +585,12 @@ void Application::Run()
         {
             scene_4.DrawAll();
 
-            scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
+           /* scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
             scene_4.GetObject(1)->transform.UpdateTransformation(3, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
 
 
             scene_4.GetObject(2)->transform.UpdateTransformation(2, new Rotate(glm::vec3(0.0f, angle_2, 0.0f)));
-            scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+            scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));*/
         }
 
 

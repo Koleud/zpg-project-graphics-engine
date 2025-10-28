@@ -17,6 +17,7 @@
 #include "Shader.h"
 #include "Observer.h"
 #include "Camera.h"
+#include "Light.h"
 
 class ShaderProgram : public Observer
 {
@@ -41,5 +42,7 @@ public:
 	void SetUniform(const char* name, const glm::vec3& vector);
 	void SetUniform(const char* name, const glm::vec4& vector);
 	void SetUniform(const char* name, const glm::mat3& matrix);
+
+    void SetLight(const std::vector<SceneLight>& lights);
 };
 
