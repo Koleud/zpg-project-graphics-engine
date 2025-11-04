@@ -138,6 +138,7 @@
     <ClCompile Include="DynamicTranslate.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Observer.cpp" />
     <ClCompile Include="Rotate.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="DynamicTranslate.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Models\bushes.h" />
     <ClInclude Include="Models\gift.h" />
@@ -176,6 +178,22 @@
     <ClInclude Include="Subject.h" />
     <ClInclude Include="Transformation.h" />
     <ClInclude Include="Translate.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\blinnphong.frag" />
+    <None Include="Shaders\blinnphong.vert" />
+    <None Include="Shaders\blinnphong_incorrect.frag" />
+    <None Include="Shaders\blinnphong_incorrect.vert" />
+    <None Include="Shaders\classic.frag" />
+    <None Include="Shaders\classic.vert" />
+    <None Include="Shaders\constant.frag" />
+    <None Include="Shaders\constant.vert" />
+    <None Include="Shaders\lamb.frag" />
+    <None Include="Shaders\lamb.vert" />
+    <None Include="Shaders\lamb_forest.frag" />
+    <None Include="Shaders\lamb_forest.vert" />
+    <None Include="Shaders\phong.frag" />
+    <None Include="Shaders\phong.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -101,9 +101,20 @@ void ShaderProgram::SetLight(const std::vector<SceneLight>& lights)
 
     for (int i = 0; i < lightCount; i++)
     {
+        const SceneLight& l = lights[i];
         std::string prefix = "lights[" + std::to_string(i) + "]";
-        SetUniform((prefix + ".position").c_str(), lights[i].GetWorldPosition());
-        SetUniform((prefix + ".color").c_str(), lights[i].color);
-        SetUniform((prefix + ".intensity").c_str(), lights[i].intensity);
+
+        SetUniform((prefix + ".position").c_str(), l.GetWorldPosition());
+        SetUniform((prefix + ".color").c_str(), l.color);
+        SetUniform((prefix + ".intensity").c_str(), l.intensity);
+        SetUniform((prefix + ".range").c_str(), l.range);
+        SetUniform((prefix + ".cutoff").c_str(), l.cutoff);
+
+        SetUniform((prefix + ".type").c_str(), static_cast<int>(l.type));
+
+        if (l.type == SceneLight::LightType::Directional || l.type == SceneLight::LightType::Spotlight)
+        {
+            SetUniform((prefix + ".direction").c_str(), glm::normalize(l.direction));
+        }
     }
 }

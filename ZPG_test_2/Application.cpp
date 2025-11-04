@@ -16,6 +16,11 @@
 #include <stdio.h>
 #include <vector>
 
+//Include tiny_obj_loader
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
+
 //Include the shader class
 #include "Shader.h"
 #include "ShaderProgram.h"
@@ -43,6 +48,8 @@ int scene1_initialized = 0;
 int scene2_initialized = 0;
 int scene3_initialized = 1;
 int scene4_initialized = 0;
+
+bool flashlight_on = false;
 
 static void error_callback(int error, const char* description) { fputs(description, stderr); }
 
@@ -87,6 +94,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene2_initialized = 0;
         scene3_initialized = 0;
         scene4_initialized = 1;
+    }
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+    {
+        flashlight_on = !flashlight_on;
     }
 }
 
@@ -167,7 +178,77 @@ float randFloat(float min, float max)
     return dis(gen);
 }
 
+void LoadOBJModel(const std::string& path)
+{
+    tinyobj::ObjReader reader;
 
+    if (!reader.ParseFromFile(path)) {
+        if (!reader.Error().empty()) {
+            printf("TinyOBJLoader error: %s\n", reader.Error().c_str());
+        }
+        return;
+    }
+
+    if (!reader.Warning().empty()) {
+        printf("TinyOBJLoader warning: %s\n", reader.Warning().c_str());
+    }
+
+    const tinyobj::attrib_t& attrib = reader.GetAttrib();
+    const std::vector<tinyobj::shape_t>& shapes = reader.GetShapes();
+    const std::vector<tinyobj::material_t>& materials = reader.GetMaterials();
+
+    printf("Loaded OBJ with %zu shapes and %zu materials.\n",
+        shapes.size(), materials.size());
+
+    if (!attrib.vertices.empty()) {
+        printf("First vertex: %.4f, %.4f, %.4f\n",
+            attrib.vertices[0], attrib.vertices[1], attrib.vertices[2]);
+    }
+
+    if (!shapes.empty()) {
+        size_t vertexCount = shapes[0].mesh.indices.size();
+        printf("First shape has %zu vertices.\n", vertexCount);
+    }
+}
+
+Model LoadOBJModelToModel(const std::string& path)
+{
+    tinyobj::ObjReader reader;
+    if (!reader.ParseFromFile(path)) {
+        throw std::runtime_error(reader.Error());
+    }
+
+    const auto& attrib = reader.GetAttrib();
+    const auto& shapes = reader.GetShapes();
+
+    std::vector<float> vertexData;
+
+    for (const auto& shape : shapes)
+    {
+        for (const auto& index : shape.mesh.indices)
+        {
+            vertexData.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+            vertexData.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+            vertexData.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+
+            if (!attrib.normals.empty())
+            {
+                vertexData.push_back(attrib.normals[3 * index.normal_index + 0]);
+                vertexData.push_back(attrib.normals[3 * index.normal_index + 1]);
+                vertexData.push_back(attrib.normals[3 * index.normal_index + 2]);
+            }
+            else
+            {
+                vertexData.push_back(0.0f);
+                vertexData.push_back(1.0f);
+                vertexData.push_back(0.0f);
+            }
+        }
+    }
+
+    size_t vertexCount = vertexData.size() / 6;
+    return Model(vertexData, vertexCount);
+}
 
 Application::Application(int width, int height, const char* title)
 {
@@ -289,6 +370,7 @@ void Application::Run()
     const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");   //_incorrect
     const std::string fragment_shader_light_3 = ReadFileToString("Shaders\\blinnphong.frag");
 
+    LoadOBJModel("C:\\Users\\dmitr\\source\\repos\\ZPG_test_2\\ZPG_test_2\\Models\\Pokeball\\Pokeball_Obj.obj");
 
 
 
@@ -349,6 +431,23 @@ void Application::Run()
     spheres.push_back(sphere_4);
 
 
+    //create fireflys objects
+    std::vector<DrawableObject> fireflys_obj;
+    DrawableObject fireflys_1(&shader_program_without_color, &sphereModel);
+    DrawableObject fireflys_2(&shader_program_without_color, &sphereModel);
+    DrawableObject fireflys_3(&shader_program_without_color, &sphereModel);
+    DrawableObject fireflys_4(&shader_program_without_color, &sphereModel);
+    DrawableObject fireflys_5(&shader_program_without_color, &sphereModel);
+    fireflys_obj.push_back(fireflys_1);
+    fireflys_obj.push_back(fireflys_2);
+    fireflys_obj.push_back(fireflys_3);
+    fireflys_obj.push_back(fireflys_4);
+    fireflys_obj.push_back(fireflys_5);
+    scene_3.AddObject(&fireflys_obj[0]);
+    scene_3.AddObject(&fireflys_obj[1]);
+    scene_3.AddObject(&fireflys_obj[2]); 
+    scene_3.AddObject(&fireflys_obj[3]);
+    scene_3.AddObject(&fireflys_obj[4]);
 
 
 	// create multiple trees and bushes with random positions and scales
@@ -430,24 +529,29 @@ void Application::Run()
 
 
     std::vector<SceneLight> lights;
-    SceneLight mainLight(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f);
+    SceneLight mainLight(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f, 10.0f);
 
     //mainLight.transform.AddTransformation(new Translate(glm::vec3(0.0f, 5.0f, 0.0f)));
 
-    SceneLight secondaryLight(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.7f);
+    SceneLight secondaryLight(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.7f, 10.0f);
 
     lights.emplace_back(mainLight);
     lights.emplace_back(secondaryLight);
 
-    std::vector<SceneLight> fireflys;
-    SceneLight mainLight_forest(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
-    SceneLight secondaryLight_forest(glm::vec3(20.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
-    SceneLight secondaryLight_forest_1(glm::vec3(10.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
-    SceneLight secondaryLight_forest_2(glm::vec3(15.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
-    SceneLight secondaryLight_forest_3(glm::vec3(25.0f, 0.5f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.5f);
 
-    mainLight_forest.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
-    secondaryLight_forest.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
+    std::vector<SceneLight> fireflys;
+    SceneLight mainLight_forest(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
+    SceneLight secondaryLight_forest(glm::vec3(20.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
+    SceneLight secondaryLight_forest_1(glm::vec3(10.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
+    SceneLight secondaryLight_forest_2(glm::vec3(15.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
+    SceneLight secondaryLight_forest_3(glm::vec3(25.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
+    SceneLight directional_forest(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.3f, 0.3f, 0.3f), 0.5f);
+    SceneLight flashlight_forest(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.685f, 0.647f, 0.712f), 1.0f, 21.0f, glm::radians(15.0f));
+
+    DynamicTranslate* dt = new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f));
+
+    mainLight_forest.transform.AddTransformation(dt);
+    secondaryLight_forest.transform.AddTransformation(dt);
     secondaryLight_forest_1.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.01f)));
     secondaryLight_forest_2.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.01f, 0.0f)));
     secondaryLight_forest_3.transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.01f, 0.0f)));
@@ -457,33 +561,57 @@ void Application::Run()
     fireflys.emplace_back(secondaryLight_forest_1);
     fireflys.emplace_back(secondaryLight_forest_2);
     fireflys.emplace_back(secondaryLight_forest_3);
+    fireflys.emplace_back(directional_forest);
+    fireflys.emplace_back(flashlight_forest);
+
+    fireflys_obj[0].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+    fireflys_obj[1].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+    fireflys_obj[2].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+    fireflys_obj[3].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+    fireflys_obj[4].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+
+    fireflys_obj[0].transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.5f, 0.0f)));
+    fireflys_obj[1].transform.AddTransformation(new Translate(glm::vec3(20.0f, 0.5f, 0.0f)));
+    fireflys_obj[2].transform.AddTransformation(new Translate(glm::vec3(10.0f, 0.5f, 0.0f)));
+    fireflys_obj[3].transform.AddTransformation(new Translate(glm::vec3(15.0f, 0.5f, 0.0f)));
+    fireflys_obj[4].transform.AddTransformation(new Translate(glm::vec3(25.0f, 0.5f, 0.0f)));
+
+    fireflys_obj[0].transform.AddTransformation(dt);
+    fireflys_obj[1].transform.AddTransformation(dt);
+    fireflys_obj[2].transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.01f)));
+    fireflys_obj[3].transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.01f, 0.0f)));
+    fireflys_obj[4].transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.01f, 0.0f)));
+
+
+    Model formula_1_model = LoadOBJModelToModel("Models\\formula_1\\Formula_1_mesh.obj");
+    DrawableObject formula_1(&shader_program_light, &formula_1_model);
+    formula_1.transform.AddTransformation(new Scale(glm::vec3(0.005f)));
+    formula_1.transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.0f, 0.0f)));
+
+    scene_3.AddObject(&formula_1);
 
 
     shader_program_light.Use();
-    //mainLight.ApplyToShader(shader_program_light);
     shader_program_light.SetLight(fireflys);
     shader_program_light.SetUniform("view", view);
     shader_program_light.SetUniform("projection", projection);
-    
+
+
     shader_program_light_2.Use();
-    //mainLight.ApplyToShader(shader_program_light_2);
     shader_program_light_2.SetLight(lights);
 	shader_program_light_2.SetUniform("view", view);
 	shader_program_light_2.SetUniform("projection", projection);
 	shader_program_light_2.SetUniform("cameraPosition", camera.GetPosition());
-    
+
 
     shader_program_light_3.Use();
-	//mainLight.ApplyToShader(shader_program_light_3);
     shader_program_light_3.SetLight(lights);
     shader_program_light_3.SetUniform("view", view);
     shader_program_light_3.SetUniform("projection", projection);
     shader_program_light_3.SetUniform("cameraPosition", camera.GetPosition());
 
 
-	// set clear color
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //glClearColor(0.2f, 0.4f, 0.7f, 1.0f);
 
 	float angle = 0.0f;
     float angle_2 = 0.0f;
@@ -491,7 +619,6 @@ void Application::Run()
 	//some pre-transofrmations
  
     //scene 1 - triangle
-    //scene_1.GetObject(0)->transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f)));
     scene_1.GetObject(0)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 0.0f, 1.0f), 0.01f));
     scene_1.GetObject(0)->transform.AddTransformation(new Scale(glm::vec3(0.5f, 0.5f, 0.5f)));
 
@@ -570,11 +697,26 @@ void Application::Run()
         if (scene3_initialized)
         {
             fireflys[0].transform.UpdateTransformation(1.0f);
-            fireflys[1].transform.UpdateTransformation(1.0f);
+
+
             fireflys[2].transform.UpdateTransformation(1.0f);
             fireflys[3].transform.UpdateTransformation(1.0f);
             fireflys[4].transform.UpdateTransformation(1.0f);
 
+            fireflys_obj[2].transform.UpdateTransformation(1.0f);
+            fireflys_obj[3].transform.UpdateTransformation(1.0f);
+            fireflys_obj[4].transform.UpdateTransformation(1.0f);
+
+            if (flashlight_on)
+            {
+                fireflys.back().intensity = 1.0f;
+            }
+            else
+            {
+                fireflys.back().intensity = 0.0f;
+            }
+            fireflys.back().position = camera.GetPosition();
+            fireflys.back().direction = camera.GetTargetDirection();
             shader_program_light.Use();
             shader_program_light.SetLight(fireflys);
 

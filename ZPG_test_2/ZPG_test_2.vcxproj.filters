@@ -72,6 +72,9 @@
     <ClCompile Include="DynamicRotate.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -149,5 +152,52 @@
     <ClInclude Include="DynamicRotate.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\blinnphong.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\blinnphong.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\blinnphong_incorrect.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\blinnphong_incorrect.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\classic.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\classic.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\constant.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\constant.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\lamb.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\lamb.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\lamb_forest.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\lamb_forest.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\phong.frag">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Shaders\phong.vert">
+      <Filter>Файлы заголовков</Filter>
+    </None>
   </ItemGroup>
 </Project>
