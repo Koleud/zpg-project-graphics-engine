@@ -12,9 +12,13 @@ class Model
 {
 private:
 	GLuint VBO = 0; GLuint VAO = 0;
-	int vertexCount;
+    int vertexCount;
+
 public:
 	Model(const std::vector<float>& points, int vertexCount);
+    Model(const std::vector<float>& points, int vertexCount, bool hasUV);
+    Model(const std::string& objPath, const std::string& mtlPath);
+
 	void Draw();
 	~Model();
 };

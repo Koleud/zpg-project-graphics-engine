@@ -147,6 +147,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Subject.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Transformation.cpp" />
     <ClCompile Include="Translate.cpp" />
     <ClCompile Include="ZPG_test_2.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Subject.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Transformation.h" />
     <ClInclude Include="Translate.h" />
   </ItemGroup>
@@ -190,8 +192,6 @@
     <None Include="Shaders\constant.vert" />
     <None Include="Shaders\lamb.frag" />
     <None Include="Shaders\lamb.vert" />
-    <None Include="Shaders\lamb_forest.frag" />
-    <None Include="Shaders\lamb_forest.vert" />
     <None Include="Shaders\phong.frag" />
     <None Include="Shaders\phong.vert" />
   </ItemGroup>

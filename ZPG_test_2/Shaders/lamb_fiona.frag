@@ -4,6 +4,7 @@
 
 in vec4 worldPosition;
 in vec3 worldNormal;
+in vec2 TexCoord;       //add
 
 struct Light {
     int type;           // 0=Ambient, 1=Point, 2=Directional, 3=Spotlight
@@ -17,13 +18,16 @@ struct Light {
 
 uniform int lightCount;
 uniform Light lights[MAX_LIGHTS];
+uniform sampler2D texture1;         //add
 
 out vec4 out_Color;
 
 void main(void) {
     vec3 norm = normalize(worldNormal);
 
-    vec3 baseColor = vec3(0.01); 
+    vec3 texColor = texture(texture1, TexCoord).rgb;        //add
+
+    vec3 baseColor = texColor * 0.05;  
     vec3 totalLight = baseColor;
 
     for (int i = 0; i < lightCount; ++i) {
@@ -40,14 +44,14 @@ void main(void) {
                 vec3 lightDir = normalize(lightVec);
                 float diff = max(dot(norm, lightDir), 0.0);
                 float attenuation = 1.0 - (distance / lights[i].range);
-                totalLight += diff * lights[i].color * lights[i].intensity * attenuation;
+                totalLight += texColor * diff * lights[i].color * lights[i].intensity * attenuation;
             }
         }
         else if (lights[i].type == 2) { 
             // Directional light
             vec3 lightDir = normalize(-lights[i].direction);
             float diff = max(dot(norm, lightDir), 0.0);
-            totalLight += diff * lights[i].color * lights[i].intensity;
+            totalLight += texColor * diff * lights[i].color * lights[i].intensity;
         }
         else if (lights[i].type == 3) { 
             // Spotlight
@@ -59,7 +63,7 @@ void main(void) {
                 if (theta > cos(lights[i].cutoff)) {
                     float diff = max(dot(norm, lightDir), 0.0);
                     float attenuation = 1.0 - (distance / lights[i].range);
-                    totalLight += diff * lights[i].color * lights[i].intensity * attenuation * theta;
+                    totalLight += texColor * diff * lights[i].color * lights[i].intensity * attenuation * theta;
                 }
             }
         }

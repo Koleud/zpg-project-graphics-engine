@@ -20,6 +20,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+#define STB_IMAGE_IMPLEMENTATION
 
 //Include the shader class
 #include "Shader.h"
@@ -43,6 +44,7 @@
 #include "FileUtils.h"
 #include "DynamicRotate.h"
 #include "DynamicTranslate.h"
+#include "Texture.h"
 
 int scene1_initialized = 0;
 int scene2_initialized = 0;
@@ -370,8 +372,22 @@ void Application::Run()
     const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");   //_incorrect
     const std::string fragment_shader_light_3 = ReadFileToString("Shaders\\blinnphong.frag");
 
-    LoadOBJModel("C:\\Users\\dmitr\\source\\repos\\ZPG_test_2\\ZPG_test_2\\Models\\Pokeball\\Pokeball_Obj.obj");
+    const std::string grass_vertex_shader = ReadFileToString("Shaders\\lamb_grass.vert");
+    const std::string grass_fragment_shader = ReadFileToString("Shaders\\lamb_grass.frag");
 
+    const std::string f1_vertex_shader = ReadFileToString("Shaders\\lamb_f1.vert");
+    const std::string f1_fragment_shader = ReadFileToString("Shaders\\lamb_f1.frag");
+
+    const std::string shrek_vertex_shader = ReadFileToString("Shaders\\lamb_shrek.vert");
+    const std::string shrek_fragment_shader = ReadFileToString("Shaders\\lamb_shrek.frag");
+    const std::string fiona_vertex_shader = ReadFileToString("Shaders\\lamb_fiona.vert");
+    const std::string fiona_fragment_shader = ReadFileToString("Shaders\\lamb_fiona.frag");
+
+
+    Texture grassTexture("Textures\\grass.jpg");
+    Texture shrekTexture("Models\\shrek\\shrek.png");
+    Texture fionaTexture("Models\\shrek\\fiona.png");
+    Texture f1Texture("Models\\formula_1\\Substance SpecGloss\\Right ones\\formula1_DefaultMaterial_Diffuse.png");
 
 
     // create shaders
@@ -390,6 +406,18 @@ void Application::Run()
     Shader vertex_shader_light_3_obj(vertex_shader_light_3, GL_VERTEX_SHADER);
     Shader fragment_shader_light_3_obj(fragment_shader_light_3, GL_FRAGMENT_SHADER);
 
+    Shader grass_vertex_shader_obj(grass_vertex_shader, GL_VERTEX_SHADER);
+    Shader grass_fragment_shader_obj(grass_fragment_shader, GL_FRAGMENT_SHADER);
+
+    Shader f1_vertex_shader_obj(f1_vertex_shader, GL_VERTEX_SHADER);
+    Shader f1_fragment_shader_obj(f1_fragment_shader, GL_FRAGMENT_SHADER);
+
+    Shader shrek_vertex_shader_obj(shrek_vertex_shader, GL_VERTEX_SHADER);
+    Shader shrek_fragment_shader_obj(shrek_fragment_shader, GL_FRAGMENT_SHADER);
+    Shader fiona_vertex_shader_obj(fiona_vertex_shader, GL_VERTEX_SHADER);
+    Shader fiona_fragment_shader_obj(fiona_fragment_shader, GL_FRAGMENT_SHADER);
+
+
 
     // create shader program
     ShaderProgram shader_program_1(vertex_shader_obj, fragment_shader_obj, &camera);
@@ -397,6 +425,13 @@ void Application::Run()
     ShaderProgram shader_program_light(vertex_shader_light_obj, fragment_shader_light_obj, &camera);
 	ShaderProgram shader_program_light_2(vertex_shader_light_2_obj, fragment_shader_light_2_obj, &camera);
 	ShaderProgram shader_program_light_3(vertex_shader_light_3_obj, fragment_shader_light_3_obj, &camera);
+
+    ShaderProgram grass_shader_program(grass_vertex_shader_obj, grass_fragment_shader_obj, &camera);
+
+    ShaderProgram f1_shader_program(f1_vertex_shader_obj, f1_fragment_shader_obj, &camera);
+
+    ShaderProgram shrek_shader_program(shrek_vertex_shader_obj, shrek_fragment_shader_obj, &camera);
+    ShaderProgram fiona_shader_program(fiona_vertex_shader_obj, fiona_fragment_shader_obj, &camera);
 
 
 	//create scenes
@@ -411,7 +446,7 @@ void Application::Run()
 	Model triangleModel(std::vector<float>(points, points + sizeof(points) / sizeof(float)), sizeof(points) / (6 * sizeof(float)));
 	Model treeModel(std::vector<float>(tree, tree + sizeof(tree) / sizeof(float)), sizeof(tree) / (6 * sizeof(float)));
 	Model bushesModel(std::vector<float>(bushes, bushes + sizeof(bushes) / sizeof(float)), sizeof(bushes) / (6 * sizeof(float)));
-	Model plainModel(std::vector<float>(plain, plain + sizeof(plain) / sizeof(float)), sizeof(plain) / (6 * sizeof(float)));
+	Model plainModel(std::vector<float>(plain, plain + sizeof(plain) / sizeof(float)), sizeof(plain) / (6 * sizeof(float)), true);
 	Model sphereModel(std::vector<float>(sphere, sphere + sizeof(sphere) / sizeof(float)), sizeof(sphere) / (6 * sizeof(float)));
 
 
@@ -471,7 +506,7 @@ void Application::Run()
 		bushes_list.push_back(bush);
 	}
 
-	DrawableObject plain(&shader_program_light, &plainModel);
+	DrawableObject plain(&grass_shader_program, &plainModel);
 	plain.transform.AddTransformation(new Scale(glm::vec3(50.0f, 1.0f, 50.0f)));
 
 
@@ -583,19 +618,56 @@ void Application::Run()
     fireflys_obj[4].transform.AddTransformation(new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.01f, 0.0f)));
 
 
-    Model formula_1_model = LoadOBJModelToModel("Models\\formula_1\\Formula_1_mesh.obj");
-    DrawableObject formula_1(&shader_program_light, &formula_1_model);
+    Model formula_1_model("Models\\formula_1\\Formula_1_mesh.obj", "Models\\formula_1\\Formula_1_mesh.mlt");
+    DrawableObject formula_1(&f1_shader_program, &formula_1_model);
     formula_1.transform.AddTransformation(new Scale(glm::vec3(0.005f)));
     formula_1.transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.0f, 0.0f)));
 
     scene_3.AddObject(&formula_1);
 
+    //Model shrek_model = LoadOBJModelToModel("Models\\shrek\\shrek.obj");
+    Model shrek_model ("Models\\shrek\\shrek.obj", "Models\\shrek\\shrek.mlt");
+    DrawableObject shrek(&shrek_shader_program, &shrek_model);
+    Model fiona_model("Models\\shrek\\fiona.obj", "Models\\shrek\\fiona.mlt");
+    DrawableObject fiona(&fiona_shader_program, &fiona_model);
+    shrek.transform.AddTransformation(new Translate(glm::vec3(3.0f, 0.0f, 0.0f)));
+    fiona.transform.AddTransformation(new Translate(glm::vec3(4.5f, 0.0f, 0.0f)));
+
+    scene_3.AddObject(&shrek);
+    scene_3.AddObject(&fiona);
 
     shader_program_light.Use();
     shader_program_light.SetLight(fireflys);
     shader_program_light.SetUniform("view", view);
     shader_program_light.SetUniform("projection", projection);
 
+    f1_shader_program.Use();
+    f1Texture.Bind(3);
+    f1_shader_program.SetUniform("texture1", 3);
+    f1_shader_program.SetLight(fireflys);
+    f1_shader_program.SetUniform("view", view);
+    f1_shader_program.SetUniform("projection", projection);
+
+    shrek_shader_program.Use();
+    shrekTexture.Bind(0);
+    shrek_shader_program.SetUniform("texture1", 0);
+    shrek_shader_program.SetLight(fireflys);
+    shrek_shader_program.SetUniform("view", view);
+    shrek_shader_program.SetUniform("projection", projection);
+
+    fiona_shader_program.Use();
+    fionaTexture.Bind(1);
+    fiona_shader_program.SetUniform("texture1", 1);
+    fiona_shader_program.SetLight(fireflys);
+    fiona_shader_program.SetUniform("view", view);
+    fiona_shader_program.SetUniform("projection", projection);
+
+    grass_shader_program.Use();
+    grassTexture.Bind(2);
+    grass_shader_program.SetUniform("texture1", 2);
+    grass_shader_program.SetLight(fireflys);
+    grass_shader_program.SetUniform("view", view);
+    grass_shader_program.SetUniform("projection", projection);
 
     shader_program_light_2.Use();
     shader_program_light_2.SetLight(lights);
@@ -632,18 +704,27 @@ void Application::Run()
 
     //scene 4 - solar system
     
+    DynamicRotate* dr_sun = new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.01f);
+
     //earth
     scene_4.GetObject(1)->transform.AddTransformation(new Scale(glm::vec3(0.4f, 0.4f, 0.4f)));
-    scene_4.GetObject(1)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.01f));
     scene_4.GetObject(1)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
-    scene_4.GetObject(1)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.005f));
 
     //moon
     scene_4.GetObject(2)->transform.AddTransformation(new Scale(glm::vec3(0.1f, 0.1f, 0.1f)));
     scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(1.5f, 0.0f, 0.0f)));
-    scene_4.GetObject(2)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.04f));
     scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
-    scene_4.GetObject(2)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, angle, 0.0f)));
+    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.005f));
+
+    /*scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
+     scene_4.GetObject(1)->transform.UpdateTransformation(3, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
+
+
+     scene_4.GetObject(2)->transform.UpdateTransformation(2, new Rotate(glm::vec3(0.0f, angle_2, 0.0f)));
+     scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));*/
 
 
 
@@ -658,6 +739,10 @@ void Application::Run()
 	camera.Attach(&shader_program_light);
 	camera.Attach(&shader_program_light_2);
 	camera.Attach(&shader_program_light_3);
+    camera.Attach(&grass_shader_program);
+    camera.Attach(&shrek_shader_program);
+    camera.Attach(&fiona_shader_program);
+    camera.Attach(&f1_shader_program);
 
 
     /*if (glfwSetWindowSizeCallback(window, window_size_callback))
@@ -720,6 +805,19 @@ void Application::Run()
             shader_program_light.Use();
             shader_program_light.SetLight(fireflys);
 
+            grass_shader_program.Use();
+            grass_shader_program.SetLight(fireflys);
+
+            shrek_shader_program.Use();
+            shrek_shader_program.SetLight(fireflys);
+            fiona_shader_program.Use();
+            fiona_shader_program.SetLight(fireflys);
+
+            f1_shader_program.Use();
+            f1_shader_program.SetLight(fireflys);
+
+
+
             scene_3.DrawAll();
         }        
 
@@ -727,12 +825,8 @@ void Application::Run()
         {
             scene_4.DrawAll();
 
-           /* scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
-            scene_4.GetObject(1)->transform.UpdateTransformation(3, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
-
-
-            scene_4.GetObject(2)->transform.UpdateTransformation(2, new Rotate(glm::vec3(0.0f, angle_2, 0.0f)));
-            scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));*/
+            scene_4.GetObject(1)->transform.UpdateTransformation(1.0f);
+            scene_4.GetObject(2)->transform.UpdateTransformation(1.0f);
         }
 
 
@@ -743,6 +837,10 @@ void Application::Run()
 		shader_program_light.CheckCompileError();
 		shader_program_light_2.CheckCompileError();
 		shader_program_light_3.CheckCompileError();
+        grass_shader_program.CheckCompileError();
+        shrek_shader_program.CheckCompileError();
+        fiona_shader_program.CheckCompileError();
+        f1_shader_program.CheckCompileError();
 
         // update events
         glfwPollEvents();
