@@ -13,11 +13,20 @@ class DrawableObject
 private:
 	ShaderProgram* shaderProgram;
 	Model* model;
+    int id;
+
+    static int globalID;
 
 public:
+
+    bool isDynamic = false;
+
 	CompositeTransformation transform;
 	DrawableObject(ShaderProgram* shaderProgram, Model* model);
+    DrawableObject(ShaderProgram* shaderProgram, Model* model, bool dynamic);
 	~DrawableObject();
+
+    int GetID() const;
 
 	void Draw();
 };

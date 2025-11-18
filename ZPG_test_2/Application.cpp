@@ -58,10 +58,60 @@ static void error_callback(int error, const char* description) { fputs(descripti
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 bool rightMousePressed = false;
+bool leftMousePressed = false;
+bool zKeyPressed = false;
+bool qKeyPressed = false;
+
+bool arrowUpPressed = false;
+bool arrowDownPressed = false;
+bool arrowLeftPressed = false;
+bool arrowRightPressed = false;
+
 double lastX = 0.0;
 double lastY = 0.0;
 float yaw = -90.0f;
 float pitch = 0.0f;
+
+
+glm::vec3 worldPos;
+
+int stecilIndex = -1;
+int selectedObjectIndex = -1;
+
+void OwnUnProject(GLFWwindow* window, Camera& camera, glm::vec3& worldPos)
+{
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    int x = (int)mouseX;
+    int y = (int)mouseY;
+
+    int windowWidth, windowHeight;
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    int newy = windowHeight - y;
+
+    GLbyte color[4];
+    GLfloat depth;
+    GLuint index;
+
+    glReadPixels(x, newy, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color);
+    glReadPixels(x, newy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    glReadPixels(x, newy, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+
+    glm::vec3 screenPos = glm::vec3(x, newy, depth);
+    glm::vec4 viewport(0, 0, windowWidth, windowHeight);
+
+    worldPos = glm::unProject(
+        screenPos,
+        camera.GetViewMatrix(),
+        camera.GetProjectionMatrix(),
+        viewport
+    );
+
+    printf("World pos = [%f, %f, %f], Stencil ID = %u\n", worldPos.x, worldPos.y, worldPos.z, index);
+}
+
+
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -101,6 +151,33 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     {
         flashlight_on = !flashlight_on;
     }
+    if (key == GLFW_KEY_Z && action == 1)
+    {
+        zKeyPressed = true;
+        printf("Z key pressed\n");
+    }    
+    if (key == GLFW_KEY_Q && action == 1)
+    {
+        OwnUnProject(window, camera, worldPos);
+        qKeyPressed = true;
+    }
+    if (key == GLFW_KEY_UP && action == 1)
+    {
+        arrowUpPressed = true;
+    }
+    if (key == GLFW_KEY_DOWN && action == 1)
+    {
+        arrowDownPressed = true;
+    }
+    if (key == GLFW_KEY_LEFT && action == 1)
+    {
+        arrowLeftPressed = true;
+    }
+    if (key == GLFW_KEY_RIGHT && action == 1)
+    {
+        arrowRightPressed = true;
+    }
+
 }
 
 static void window_focus_callback(GLFWwindow* window, int focused) { printf("window_focus_callback \n"); }
@@ -148,12 +225,34 @@ static void button_callback(GLFWwindow* window, int button, int action, int mode
 {
 	if (action == GLFW_PRESS) 
         printf("button_callback [%d,%d,%d]\n", button, action, mode);
+
     if (button == GLFW_MOUSE_BUTTON_RIGHT)
     {
         if (action == GLFW_PRESS)
             rightMousePressed = true;
         else if (action == GLFW_RELEASE)
             rightMousePressed = false;
+    }
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == 1)
+    {
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+
+        int x = (int)mouseX;
+        int y = (int)mouseY;
+
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        int newy = windowHeight - y;
+
+        GLuint index;
+
+        glReadPixels(x, newy, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+
+        printf("World pos = [%f, %f, %f], Stencil ID = %u\n", worldPos.x, worldPos.y, worldPos.z, index);
+
+        stecilIndex = index;
+        leftMousePressed = true;
     }
 }
 
@@ -252,6 +351,22 @@ Model LoadOBJModelToModel(const std::string& path)
     return Model(vertexData, vertexCount);
 }
 
+int getSelectedIndex(Scene* scene, int stencilStartIndex)
+{
+    selectedObjectIndex = stecilIndex - stencilStartIndex;
+
+
+    for (int i = 0; i < scene->GetObjectCount(); i++)
+    {
+        if (scene->GetObject(i)->GetID() == stecilIndex)
+        {
+            selectedObjectIndex = i;
+            break;
+        }
+    }
+    return selectedObjectIndex;
+}
+
 Application::Application(int width, int height, const char* title)
 {
 	this->width = width;
@@ -288,6 +403,8 @@ void Application::Run()
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+    glfwSetWindowUserPointer(window, &camera); // set the camera as user pointer for unProject callbacks
 
     // Sets the key callback
     glfwSetKeyCallback(window, key_callback);
@@ -719,19 +836,16 @@ void Application::Run()
     scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
     scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.005f));
 
-    /*scene_4.GetObject(1)->transform.UpdateTransformation(1, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
-     scene_4.GetObject(1)->transform.UpdateTransformation(3, (new Rotate(glm::vec3(0.0f, angle, 0.0f))));
-
-
-     scene_4.GetObject(2)->transform.UpdateTransformation(2, new Rotate(glm::vec3(0.0f, angle_2, 0.0f)));
-     scene_4.GetObject(2)->transform.UpdateTransformation(4, new Rotate(glm::vec3(0.0f, angle, 0.0f)));*/
-
-
-
     float lastFrame = 0.0f;
     float deltaTime = 0.0f;
 
+
     float aspect = (float)width / (float)height;
+
+
+    int stencilStartIndex = scene_1.GetObjectCount() + scene_2.GetObjectCount();
+
+
     camera.UpdateProjection(aspect);
 
     camera.Attach(&shader_program_1);
@@ -745,16 +859,15 @@ void Application::Run()
     camera.Attach(&f1_shader_program);
 
 
-    /*if (glfwSetWindowSizeCallback(window, window_size_callback))
-    {
 
-    }*/
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     glEnable(GL_DEPTH_TEST);//Do depth comparisons and update the depth buffer.
     // hlavní smyčka
     while (!glfwWindowShouldClose(window)) {
         // clear color a depth buffer
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -762,15 +875,10 @@ void Application::Run()
 
         inputCamera(window, camera, deltaTime);
 
-		angle += 0.003f;
-        angle_2 += 0.01f;
-
 
         if (scene1_initialized)
         {
             scene_1.DrawAll();
-
-			//scene_1.GetObject(0)->transform.UpdateTransformation(0, (new Rotate(glm::vec3(0.0f, 0.0f, angle))));
             scene_1.GetObject(0)->transform.UpdateTransformation(1.0f);
         }
 
@@ -781,6 +889,66 @@ void Application::Run()
 
         if (scene3_initialized)
         {
+            if (qKeyPressed)
+            {
+                DrawableObject* newTree = new DrawableObject(&shader_program_light, &treeModel, true);
+                newTree->transform.AddTransformation(new Translate(glm::vec3(worldPos.x, worldPos.y, worldPos.z)));
+                scene_3.AddObject(newTree);
+                qKeyPressed = false;
+            }
+            if (leftMousePressed) 
+            {
+                leftMousePressed = false;
+            }
+            if (zKeyPressed)
+            {
+                selectedObjectIndex = getSelectedIndex(&scene_3, stencilStartIndex);
+
+                if (selectedObjectIndex >= 0 && selectedObjectIndex < scene_3.GetObjectCount())
+                {
+                    scene_3.RemoveObject(selectedObjectIndex);
+                    printf("Selected Object Index to remove: %d\n", selectedObjectIndex);
+                    selectedObjectIndex = -1;
+                }
+
+                zKeyPressed = false;
+            }
+            if (arrowUpPressed)
+            {
+                selectedObjectIndex = getSelectedIndex(&scene_3, stencilStartIndex);
+                if (selectedObjectIndex >= 0 && selectedObjectIndex < scene_3.GetObjectCount())
+                {
+                    scene_3.GetObject(selectedObjectIndex)->transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.0f, -0.5f)));
+                }
+                arrowUpPressed = false;
+            }
+            if (arrowDownPressed)
+            {
+                selectedObjectIndex = getSelectedIndex(&scene_3, stencilStartIndex);
+                if (selectedObjectIndex >= 0 && selectedObjectIndex < scene_3.GetObjectCount())
+                {
+                    scene_3.GetObject(selectedObjectIndex)->transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.0f, 0.5f)));
+                }
+                arrowDownPressed = false;
+            }
+            if (arrowLeftPressed)
+            {
+                selectedObjectIndex = getSelectedIndex(&scene_3, stencilStartIndex);
+                if (selectedObjectIndex >= 0 && selectedObjectIndex < scene_3.GetObjectCount())
+                {
+                    scene_3.GetObject(selectedObjectIndex)->transform.AddTransformation(new Translate(glm::vec3(-0.5f, 0.0f, 0.0f)));
+                }
+                arrowLeftPressed = false;
+            }
+            if (arrowRightPressed)
+            {
+                selectedObjectIndex = getSelectedIndex(&scene_3, stencilStartIndex);
+                if (selectedObjectIndex >= 0 && selectedObjectIndex < scene_3.GetObjectCount())
+                {
+                    scene_3.GetObject(selectedObjectIndex)->transform.AddTransformation(new Translate(glm::vec3(0.5f, 0.0f, 0.0f)));
+                }
+                arrowRightPressed = false;
+            }
             fireflys[0].transform.UpdateTransformation(1.0f);
 
 

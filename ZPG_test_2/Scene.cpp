@@ -39,6 +39,11 @@ void Scene::AddObject(DrawableObject* object)
 	drawObjects.push_back(object);
 }
 
+int Scene::GetObjectCount() const
+{
+    return drawObjects.size();
+}
+
 DrawableObject* Scene::GetObject(int index)
 {
 	if (index < 0 || index >= drawObjects.size())
@@ -46,10 +51,28 @@ DrawableObject* Scene::GetObject(int index)
 	return drawObjects[index];
 }
 
+std::vector<DrawableObject*> Scene::GetAllObjects()
+{
+    return drawObjects;
+}
+
+void Scene::RemoveObject(int index)
+{
+    if (!(index < 0 || index >= drawObjects.size()))
+    {
+        if (drawObjects[index]->isDynamic)
+        {
+            delete drawObjects[index];          //delete Object from memory is dynamic
+        }
+        drawObjects.erase(drawObjects.begin() + index);     //remove pointer from vector
+    }
+}
+
 void Scene::DrawAll()
 {
 	for (auto obj : drawObjects)
 	{
+        glStencilFunc(GL_ALWAYS, obj->GetID(), 0xFF);
 		obj->Draw();
 	}
 }
