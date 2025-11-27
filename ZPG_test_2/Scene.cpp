@@ -74,5 +74,6 @@ void Scene::DrawAll()
 	{
         glStencilFunc(GL_ALWAYS, obj->GetID(), 0xFF);
 		obj->Draw();
+        obj->transform.UpdateTransformation();
 	}
 }

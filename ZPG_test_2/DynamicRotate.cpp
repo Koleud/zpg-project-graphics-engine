@@ -7,7 +7,7 @@ DynamicRotate::DynamicRotate(const glm::vec3& axis, float speed)
     this->angle = 0.0f;
 }
 
-void DynamicRotate::Update(float deltaTime)
+void DynamicRotate::Update()
 {
     angle += speed * deltaTime;
     if (angle > glm::two_pi<float>())   // angle > 180 degrees

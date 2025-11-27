@@ -12,7 +12,7 @@ private:
 
 public:
     DynamicRotate(const glm::vec3& axis, float speed);
-    void Update(float deltaTime) override;
+    void Update() override;
     glm::mat4 GetMatrix() const override;
 };
 

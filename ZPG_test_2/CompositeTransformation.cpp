@@ -17,8 +17,19 @@ glm::mat4 CompositeTransformation::GetMatrix() const
 	return result;
 }
 
-void CompositeTransformation::UpdateTransformation(float deltaTime)
+void CompositeTransformation::UpdateTransformation()
 {
     for (auto* t : transformations)
-        t->Update(deltaTime);
+        t->Update();
+}
+
+glm::vec3 CompositeTransformation::GetPosition() const
+{
+    glm::mat4 m = GetMatrix();
+    return glm::vec3(m[3]);
+}
+
+void CompositeTransformation::ClearTransformations()
+{
+    transformations.clear();
 }

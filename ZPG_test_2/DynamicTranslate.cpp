@@ -7,7 +7,7 @@ DynamicTranslate::DynamicTranslate(const glm::vec3& startPos, const glm::vec3& v
     currentPosition = startPos;
 }
 
-void DynamicTranslate::Update(float deltaTime)
+void DynamicTranslate::Update()
 {
     currentPosition += velocity * deltaTime;
 }

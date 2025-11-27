@@ -13,7 +13,7 @@ public:
 
     DynamicTranslate(const glm::vec3& startPos, const glm::vec3& vel);
 
-    void Update(float deltaTime) override;
+    void Update() override;
 
     glm::mat4 GetMatrix() const override;
 };

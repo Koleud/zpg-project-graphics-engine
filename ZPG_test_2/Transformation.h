@@ -5,8 +5,9 @@
 class Transformation
 {
 public:
+    float deltaTime = 1.0f;
 	virtual glm::mat4 GetMatrix() const = 0;
 	virtual ~Transformation() = default;
-    virtual void Update(float deltaTime) {};
+    virtual void Update() {};
 };
 

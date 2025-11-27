@@ -12,6 +12,11 @@ public:
 
 	glm::mat4 GetMatrix() const override;
 
-	void UpdateTransformation(float deltaTime);
+	void UpdateTransformation();
+
+    glm::vec3 GetPosition() const;
+
+
+    void ClearTransformations();
 };
 
