@@ -1,7 +1,7 @@
 #include "Light.h"
 #include <string>
 
-// Ambient light
+//Ambient light
 SceneLight::SceneLight(const glm::vec3& col, float intens)
 {
     type = LightType::Ambient;
@@ -13,7 +13,7 @@ SceneLight::SceneLight(const glm::vec3& col, float intens)
     cutoff = 0.0f;
 }
 
-// Point light
+//Point light
 SceneLight::SceneLight(const glm::vec3& pos, const glm::vec3& col, float intens, float rng)
 {
     type = LightType::Point;
@@ -25,7 +25,7 @@ SceneLight::SceneLight(const glm::vec3& pos, const glm::vec3& col, float intens,
     cutoff = 0.0f;
 }
 
-// Directional light
+//Directional light
 SceneLight::SceneLight(const glm::vec3& dir, const glm::vec3& col, float intens)
 {
     type = LightType::Directional;
@@ -37,8 +37,8 @@ SceneLight::SceneLight(const glm::vec3& dir, const glm::vec3& col, float intens)
     cutoff = 0.0f;
 }
 
-// Spotlight
-SceneLight::SceneLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& col, float intens, float rng, float cutoffAngle)
+//Spotlight
+SceneLight::SceneLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& col, float intens, float rng, float angle)
 {
     type = LightType::Spotlight;
     position = pos;
@@ -46,7 +46,7 @@ SceneLight::SceneLight(const glm::vec3& pos, const glm::vec3& dir, const glm::ve
     color = col;
     intensity = intens;
     range = rng;
-    cutoff = cutoffAngle;
+    cutoff = angle;
 }
 
 glm::vec3 SceneLight::GetWorldPosition() const 

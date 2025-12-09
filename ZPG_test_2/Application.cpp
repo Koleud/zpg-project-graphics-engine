@@ -46,6 +46,9 @@
 #include "DynamicRotate.h"
 #include "DynamicTranslate.h"
 #include "Texture.h"
+#include "BezierCurves.h"
+#include "BezierSpline.h"
+#include "Material.h"
 
 const float PI = 3.14159265f;
 
@@ -54,6 +57,7 @@ int scene2_initialized = 0;
 int scene3_initialized = 1;
 int scene4_initialized = 0;
 int scene5_initialized = 0;
+int scene6_initialized = 0;
 
 bool flashlight_on = false;
 
@@ -65,6 +69,8 @@ bool rightMousePressed = false;
 bool leftMousePressed = false;
 bool zKeyPressed = false;
 bool qKeyPressed = false;
+bool gKeyPressed = false;
+bool hKeyPressed = false;
 
 bool arrowUpPressed = false;
 bool arrowDownPressed = false;
@@ -76,8 +82,9 @@ double lastY = 0.0;
 float yaw = -90.0f;
 float pitch = 0.0f;
 
-
 glm::vec3 worldPos;
+
+BezierSpline bezierSpline;
 
 int stecilIndex = -1;
 int selectedObjectIndex = -1;
@@ -130,6 +137,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene3_initialized = 0;
         scene4_initialized = 0;
         scene5_initialized = 0;
+        scene6_initialized = 0;
     }
     if (key == GLFW_KEY_2)
     {
@@ -138,6 +146,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene3_initialized = 0;
         scene4_initialized = 0;
         scene5_initialized = 0;
+        scene6_initialized = 0;
     }
     if (key == GLFW_KEY_3)
     {
@@ -146,6 +155,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene3_initialized = 1;
         scene4_initialized = 0;
         scene5_initialized = 0;
+        scene6_initialized = 0;
     }
     if (key == GLFW_KEY_4)
     {
@@ -154,6 +164,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene3_initialized = 0;
         scene4_initialized = 1;
         scene5_initialized = 0;
+        scene6_initialized = 0;
     }
     if (key == GLFW_KEY_5)
     {
@@ -162,6 +173,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         scene3_initialized = 0;
         scene4_initialized = 0;
         scene5_initialized = 1;
+        scene6_initialized = 0;
+    }
+    if (key == GLFW_KEY_6)
+    {
+        scene1_initialized = 0;
+        scene2_initialized = 0;
+        scene3_initialized = 0;
+        scene4_initialized = 0;
+        scene5_initialized = 0;
+        scene6_initialized = 1;
     }
     if (key == GLFW_KEY_F && action == GLFW_PRESS)
     {
@@ -192,6 +213,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_RIGHT && action == 1)
     {
         arrowRightPressed = true;
+    }
+    if(key == GLFW_KEY_G && action == 1)
+    {
+        OwnUnProject(window, camera, worldPos);
+        gKeyPressed = true;
+    }    
+    if (key == GLFW_KEY_H && action == 1)
+    {
+        //OwnUnProject(window, camera, worldPos);
+        hKeyPressed = true;
     }
 
 }
@@ -491,30 +522,23 @@ void Application::Run()
     const std::string fragment_shader_without_color = ReadFileToString("Shaders\\constant.frag");
 
 
-    //Lambert's shading model shaders
-    const std::string vertex_shader_light = ReadFileToString("Shaders\\lamb.vert");
-    const std::string fragment_shader_light = ReadFileToString("Shaders\\lamb.frag");
-
-
     //Phong's shading model shaders
     const std::string vertex_shader_light_2 = ReadFileToString("Shaders\\phong.vert");
     const std::string fragment_shader_light_2 = ReadFileToString("Shaders\\phong.frag");
 
 
     //Blinn-Phong's shading model shaders
-    const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");   //incorrect shader
+    const std::string vertex_shader_light_3 = ReadFileToString("Shaders\\blinnphong.vert");
     const std::string fragment_shader_light_3 = ReadFileToString("Shaders\\blinnphong.frag");
 
-    const std::string grass_vertex_shader = ReadFileToString("Shaders\\lamb_grass.vert");
-    const std::string grass_fragment_shader = ReadFileToString("Shaders\\lamb_grass.frag");
 
-    const std::string f1_vertex_shader = ReadFileToString("Shaders\\lamb_f1.vert");
-    const std::string f1_fragment_shader = ReadFileToString("Shaders\\lamb_f1.frag");
+    //Lambert's shading model shaders
+    const std::string fiona_vertex_shader = ReadFileToString("Shaders\\lamb.vert");
+    const std::string fiona_fragment_shader = ReadFileToString("Shaders\\lamb.frag");
 
-    const std::string shrek_vertex_shader = ReadFileToString("Shaders\\lamb_shrek.vert");
-    const std::string shrek_fragment_shader = ReadFileToString("Shaders\\lamb_shrek.frag");
-    const std::string fiona_vertex_shader = ReadFileToString("Shaders\\lamb_fiona.vert");
-    const std::string fiona_fragment_shader = ReadFileToString("Shaders\\lamb_fiona.frag");
+    //Lambert's shading model shaders without texture
+    const std::string vertex_shader_without_texture = ReadFileToString("Shaders\\lamb_without_tex.vert");
+    const std::string fragment_shader_without_texture = ReadFileToString("Shaders\\lamb_without_tex.frag");
 
 
     Texture grassTexture("Textures\\grass.jpg");
@@ -525,6 +549,10 @@ void Application::Run()
     Texture earthTexture("Textures\\2k_earth_daymap.jpg");
     Texture moonTexture("Textures\\2k_moon.jpg");
     Texture skyboxTexture("Textures\\2k_stars_milky_way.jpg");
+    shrekTexture.Bind(0);
+    fionaTexture.Bind(1);
+    grassTexture.Bind(2);
+    f1Texture.Bind(3);
     sunTexture.Bind(4);
     earthTexture.Bind(5);
     moonTexture.Bind(6);
@@ -538,8 +566,8 @@ void Application::Run()
     Shader vertex_shader_without_color_obj(vertex_shader_without_color, GL_VERTEX_SHADER);
     Shader fragment_shader_without_color_obj(fragment_shader_without_color, GL_FRAGMENT_SHADER);
 
-    Shader vertex_shader_light_obj(vertex_shader_light, GL_VERTEX_SHADER);
-    Shader fragment_shader_light_obj(fragment_shader_light, GL_FRAGMENT_SHADER);
+    Shader vertex_shader_light_obj(fiona_vertex_shader, GL_VERTEX_SHADER);
+    Shader fragment_shader_light_obj(fiona_fragment_shader, GL_FRAGMENT_SHADER);
 
 	Shader vertex_shader_light_2_obj(vertex_shader_light_2, GL_VERTEX_SHADER);
 	Shader fragment_shader_light_2_obj(fragment_shader_light_2, GL_FRAGMENT_SHADER);
@@ -547,14 +575,14 @@ void Application::Run()
     Shader vertex_shader_light_3_obj(vertex_shader_light_3, GL_VERTEX_SHADER);
     Shader fragment_shader_light_3_obj(fragment_shader_light_3, GL_FRAGMENT_SHADER);
 
-    Shader grass_vertex_shader_obj(grass_vertex_shader, GL_VERTEX_SHADER);
-    Shader grass_fragment_shader_obj(grass_fragment_shader, GL_FRAGMENT_SHADER);
+    Shader grass_vertex_shader_obj(fiona_vertex_shader, GL_VERTEX_SHADER);
+    Shader grass_fragment_shader_obj(fiona_fragment_shader, GL_FRAGMENT_SHADER);
 
-    Shader f1_vertex_shader_obj(f1_vertex_shader, GL_VERTEX_SHADER);
-    Shader f1_fragment_shader_obj(f1_fragment_shader, GL_FRAGMENT_SHADER);
+    Shader f1_vertex_shader_obj(vertex_shader_light_2, GL_VERTEX_SHADER);
+    Shader f1_fragment_shader_obj(fragment_shader_light_2, GL_FRAGMENT_SHADER);
 
-    Shader shrek_vertex_shader_obj(shrek_vertex_shader, GL_VERTEX_SHADER);
-    Shader shrek_fragment_shader_obj(shrek_fragment_shader, GL_FRAGMENT_SHADER);
+    Shader shrek_vertex_shader_obj(fiona_vertex_shader, GL_VERTEX_SHADER);
+    Shader shrek_fragment_shader_obj(fiona_fragment_shader, GL_FRAGMENT_SHADER);
 
     Shader fiona_vertex_shader_obj(fiona_vertex_shader, GL_VERTEX_SHADER);
     Shader fiona_fragment_shader_obj(fiona_fragment_shader, GL_FRAGMENT_SHADER);
@@ -571,6 +599,9 @@ void Application::Run()
 
     Shader skybox_vertex_shader_obj(vertex_shader_without_color, GL_VERTEX_SHADER);
     Shader skybox_fragment_shader_obj(fragment_shader_without_color, GL_FRAGMENT_SHADER);
+
+    Shader vertex_shader_without_texture_obj(vertex_shader_without_texture, GL_VERTEX_SHADER);
+    Shader fragment_shader_without_texture_obj(fragment_shader_without_texture, GL_FRAGMENT_SHADER);
 
 
 
@@ -597,6 +628,8 @@ void Application::Run()
     ShaderProgram moon_shader_program(moon_vertex_shader_obj, moon_fragment_shader_obj, &camera);
     ShaderProgram skybox_shader_program(skybox_vertex_shader_obj, skybox_fragment_shader_obj, &camera);
 
+    ShaderProgram shader_program_without_texture(vertex_shader_without_texture_obj, fragment_shader_without_texture_obj, &camera);
+
 
 	//create scenes
     Scene scene_1 = Scene();
@@ -604,6 +637,7 @@ void Application::Run()
     Scene scene_3 = Scene();
     Scene scene_4 = Scene();
     Scene scene_5 = Scene();
+    Scene scene_6 = Scene();
 
 
 
@@ -650,6 +684,7 @@ void Application::Run()
     Model cubeModel(std::vector<float>(cube, cube + sizeof(cube) / sizeof(float)), sizeof(cube) / (6 * sizeof(float)));
     Model formula_1_model("Models\\formula_1\\Formula_1_mesh.obj", "Models\\formula_1\\Formula_1_mesh.mlt");
     Model sphereModelWithUV(sphereWithUV, sphereWithUV.size() / 8, true);
+    Model loginModel("Models\\login_vsb\\login_sha0062.obj", "Models\\login_vsb\\login_sha0062.mlt");
 
 	// create drawable objects
 	DrawableObject triangle(&shader_program_1, &triangleModel);
@@ -691,7 +726,7 @@ void Application::Run()
 	std::vector<DrawableObject> bushes_list;
 	for (int i = 0; i < 50; i++)
 	{
-		DrawableObject tree(&shader_program_light, &treeModel);
+		DrawableObject tree(&shader_program_without_texture, &treeModel);
         tree.transform.AddTransformation(new Rotate(glm::vec3(0.0f, randFloat(0.0f, 360.0f), 0.0f)));
 		tree.transform.AddTransformation(new Translate(glm::vec3(randFloat(-30.0f, 30.0f), 0.0f, randFloat(-30.0f, 30.0f))));
 		float scale = randFloat(0.3f, 1.0f);
@@ -699,21 +734,21 @@ void Application::Run()
 		trees.push_back(tree);
 
 		
-		DrawableObject bush(&shader_program_light, &bushesModel);
+		DrawableObject bush(&shader_program_without_texture, &bushesModel);
 		bush.transform.AddTransformation(new Rotate(glm::vec3(0.0f, randFloat(0.0f, 360.0f), 0.0f)));
 		bush.transform.AddTransformation(new Translate(glm::vec3(randFloat(-30.0f, 30.0f), 0.0f, randFloat(-30.0f, 30.0f))));
 		float scale_bush = randFloat(0.5f, 1.5f);
 		bush.transform.AddTransformation(new Scale(glm::vec3(scale_bush, scale_bush, scale_bush)));
 		bushes_list.push_back(bush);
 	}
-
+    DrawableObject login_obj(&shader_program_without_texture, &loginModel);
+    login_obj.transform.AddTransformation(new Translate(glm::vec3(-5.0f, 0.0f, 0.0f)));
 	DrawableObject plain(&grass_shader_program, &plainModel);
 	plain.transform.AddTransformation(new Scale(glm::vec3(50.0f, 1.0f, 50.0f)));
 
 
     DrawableObject cube(&skybox_shader_program, &sphereModelWithUV);
     
-
 
     //create Solar system scene objects
     DrawableObject sun(&sun_shader_program, &sphereModelWithUV);
@@ -739,6 +774,21 @@ void Application::Run()
     SceneLight directional_game(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.8f, 0.8f, 0.8f), 0.5f);
     lights_game.emplace_back(directional_game);
 
+
+
+    //create object for Bezier curve scene
+    DrawableObject plain_bezier(&grass_shader_program, &plainModel);
+    plain_bezier.transform.AddTransformation(new Scale(glm::vec3(20.0f, 1.0f, 20.0f)));
+    DrawableObject f1_bezier(&f1_shader_program, &formula_1_model);
+    f1_bezier.transform.AddTransformation(new Scale(glm::vec3(0.005f)));
+    f1_bezier.transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.0f, 0.0f)));
+    f1_bezier.transform.AddTransformation(new BezierCurves (glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(5.0f, 0.0f, 5.0f),
+            glm::vec3(10.0f, 0.0f, -5.0f),
+            glm::vec3(15.0f, 0.0f, 0.0f)
+    , 0.001f));
+
+
 	//add objects to scenes
 
     //scene 1 - rotating triangle
@@ -762,6 +812,7 @@ void Application::Run()
 		scene_3.AddObject(&bushes_list[i]);
 	}
     scene_3.AddObject(&plain);
+    scene_3.AddObject(&login_obj);
     //scene_3.AddObject(&cube);
 
 
@@ -776,6 +827,10 @@ void Application::Run()
     scene_5.AddObject(&f1);
 
 
+    // scene 6 - Bezier curve scene
+    scene_6.AddObject(&plain_bezier);
+    scene_6.AddObject(&f1_bezier);
+
 
 	// create view and projection matrices0
     glm::mat4 view = camera.GetViewMatrix();
@@ -783,7 +838,7 @@ void Application::Run()
     //glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 100.0f);
     //glm::mat4 projection = glm::perspective(glm::radians(130.0f), (float)width / (float)height, 0.1f, 100.0f);
 
-	// pass matrices to shader
+
 	shader_program_1.Use();
 	shader_program_1.SetUniform("view", view);
 	shader_program_1.SetUniform("projection", projection);
@@ -793,15 +848,11 @@ void Application::Run()
     shader_program_without_color.SetUniform("projection", projection);
 
 
+    //Sphere scene lights
     std::vector<SceneLight> lights;
-    SceneLight mainLight(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f, 10.0f);
-
-    //mainLight.transform.AddTransformation(new Translate(glm::vec3(0.0f, 5.0f, 0.0f)));
-
-    SceneLight secondaryLight(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 0.7f, 10.0f);
+    SceneLight mainLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.385f, 0.647f, 0.812f), 1.0f, 10.0f);
 
     lights.emplace_back(mainLight);
-    lights.emplace_back(secondaryLight);
 
 
     std::vector<SceneLight> fireflys;
@@ -811,7 +862,7 @@ void Application::Run()
     SceneLight secondaryLight_forest_2(glm::vec3(15.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
     SceneLight secondaryLight_forest_3(glm::vec3(25.0f, 0.5f, 0.0f), glm::vec3(0.812f, 0.647f, 0.385f), 1.0f, 2.0f);
     SceneLight directional_forest(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.3f, 0.3f, 0.3f), 0.5f);
-    SceneLight flashlight_forest(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.685f, 0.647f, 0.712f), 1.0f, 21.0f, glm::radians(15.0f));
+    SceneLight flashlight_forest(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.685f, 0.647f, 0.712f), 0.0f, 21.0f, glm::radians(15.0f));
 
     DynamicTranslate* dt = new DynamicTranslate(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.01f, 0.0f, 0.0f));
 
@@ -832,7 +883,7 @@ void Application::Run()
     fireflys_obj[0].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
     fireflys_obj[1].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
     fireflys_obj[2].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
-    fireflys_obj[3].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
+    fireflys_obj[3].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));     
     fireflys_obj[4].transform.AddTransformation(new Scale(glm::vec3(0.05f, 0.05f, 0.05f)));
 
     fireflys_obj[0].transform.AddTransformation(new Translate(glm::vec3(0.0f, 0.5f, 0.0f)));
@@ -866,15 +917,10 @@ void Application::Run()
     scene_3.AddObject(&fiona);
 
 
-    //glm::mat4 custom = glm::mat4(1.0f);
-    //custom[3][3] = 20.0f;
-
     shader_program_light.Use();
     shader_program_light.SetLight(fireflys);
     shader_program_light.SetUniform("view", view);
     shader_program_light.SetUniform("projection", projection);
-    //shader_program_light.SetUniform("customMatrix", custom);
-
 
     f1_shader_program.Use();
     f1Texture.Bind(3);
@@ -883,11 +929,22 @@ void Application::Run()
     f1_shader_program.SetUniform("view", view);
     f1_shader_program.SetUniform("projection", projection);
 
+    Material redPlastic(
+        glm::vec3(0.1f, 0.1f, 0.1f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        32.0f
+    );
+
     f1_shader_program_game.Use();
     f1_shader_program_game.SetLight(lights_game);
     f1_shader_program_game.SetUniform("texture1", 3);
     f1_shader_program_game.SetUniform("view", view);
     f1_shader_program_game.SetUniform("projection", projection);
+    f1_shader_program_game.SetUniform("materialAmbient", redPlastic.ambient);
+    f1_shader_program_game.SetUniform("materialDiffuse", redPlastic.diffuse);
+    f1_shader_program_game.SetUniform("materialSpecular", redPlastic.specular);
+    f1_shader_program_game.SetUniform("materialShininess", redPlastic.shininess);
 
     shrek_shader_program.Use();
     shrekTexture.Bind(0);
@@ -934,18 +991,6 @@ void Application::Run()
     moon_shader_program.SetUniform("view", view);
     moon_shader_program.SetUniform("projection", projection);    
     
-    //// 1) Skybox
-    //glDepthMask(GL_FALSE);
-    //glDepthFunc(GL_LEQUAL);
-
-    //skybox_shader_program.Use();
-    //skybox_shader_program.SetUniform("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
-    //skybox_shader_program.SetUniform("texture1", 7);
-    //skybox_shader_program.SetUniform("projection", projection);
-    //cube.Draw();   // skybox
-
-    //glDepthMask(GL_TRUE);
-    //glDepthFunc(GL_LESS);
 
     shader_program_light_2.Use();
     shader_program_light_2.SetLight(lights);
@@ -959,6 +1004,12 @@ void Application::Run()
     shader_program_light_3.SetUniform("view", view);
     shader_program_light_3.SetUniform("projection", projection);
     shader_program_light_3.SetUniform("cameraPosition", camera.GetPosition());
+
+    shader_program_without_texture.Use();
+    shader_program_without_texture.SetLight(lights);
+    shader_program_without_texture.SetUniform("view", view);
+    shader_program_without_texture.SetUniform("projection", projection);
+    shader_program_without_texture.SetUniform("cameraPosition", camera.GetPosition());
 
 
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -991,17 +1042,17 @@ void Application::Run()
     //earth
     scene_4.GetObject(1)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, 0.0f, 3.2f)));
     scene_4.GetObject(1)->transform.AddTransformation(new Scale(glm::vec3(0.4f, 0.4f, 0.4f)));
-    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.005f));
+    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.005f));  //own rotation
     scene_4.GetObject(1)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
-    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.0025f));
+    scene_4.GetObject(1)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.0025f)); //orbit around sun
 
     //moon
     scene_4.GetObject(2)->transform.AddTransformation(new Rotate(glm::vec3(0.0f, 0.0f, 3.2f)));
     scene_4.GetObject(2)->transform.AddTransformation(new Scale(glm::vec3(0.1f, 0.1f, 0.1f)));
-    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(1.5f, 0.0f, 0.0f)));
-    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.02f));
-    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f)));
-    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.0025f));
+    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(1.5f, 0.0f, 0.0f))); //position from earth
+    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.02f)); //own rotation
+    scene_4.GetObject(2)->transform.AddTransformation(new Translate(glm::vec3(5.0f, 0.0f, 0.0f))); //position from sun
+    scene_4.GetObject(2)->transform.AddTransformation(new DynamicRotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.0025f)); //orbit around sun and earth
 
 
     float lastFrame = 0.0f;
@@ -1032,6 +1083,7 @@ void Application::Run()
     camera.Attach(&earth_shader_program);
     camera.Attach(&moon_shader_program);
     camera.Attach(&skybox_shader_program);
+    camera.Attach(&shader_program_without_texture);
 
 
 
@@ -1040,9 +1092,11 @@ void Application::Run()
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     glEnable(GL_DEPTH_TEST);//Do depth comparisons and update the depth buffer.
-    // hlavní smyčka
-    while (!glfwWindowShouldClose(window)) {
-        // clear color a depth buffer
+
+    //main rendering loop
+    while (!glfwWindowShouldClose(window)) 
+    {
+        // clear color a depth (z-) buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         float currentFrame = glfwGetTime();
@@ -1056,7 +1110,6 @@ void Application::Run()
 
         skybox_shader_program.Use();
         skybox_shader_program.SetUniform("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
-        //skybox_shader_program.SetUniform("view", camera.GetViewMatrix());
         skybox_shader_program.SetUniform("texture1", 7);
         skybox_shader_program.SetUniform("projection", projection);
         cube.Draw();   // skybox
@@ -1172,16 +1225,8 @@ void Application::Run()
             f1_shader_program.Use();
             f1_shader_program.SetLight(fireflys);
 
-
-            // 1. Нарисовать скайбокс
-            //glDepthMask(GL_FALSE);
-            //glDepthFunc(GL_LEQUAL);
-            //skybox_shader_program.Use();
-            //cube.Draw(); // <-- явно рисуем скайбокс
-            //glDepthMask(GL_TRUE);
-            //glDepthFunc(GL_LESS);
-
-
+            shader_program_without_texture.Use();
+            shader_program_without_texture.SetLight(fireflys);
 
             scene_3.DrawAll();
         }        
@@ -1238,7 +1283,29 @@ void Application::Run()
             f1_shader_program_game.SetLight(lights_game);
             grass_shader_program_game.SetLight(lights_game);
         }
+        if (scene6_initialized)
+        {
+            scene_6.DrawAll();
+            if (gKeyPressed)
+            {
+                bezierSpline.AddPoint(worldPos);
+                printf("Added point to Bezier curve: (%f, %f, %f)\n", worldPos.x, worldPos.y, worldPos.z);
+                gKeyPressed = false;
+            }
+            if (hKeyPressed)
+            {
+                bezierSpline.FinalizeSegments();
+                f1_bezier.transform.ClearTransformations();
+                f1_bezier.transform.AddTransformation(new Scale(glm::vec3(0.005f)));
+                f1_bezier.transform.AddTransformation(&bezierSpline);
+                hKeyPressed = false;
+            }
 
+            grass_shader_program_game.Use();
+            f1_shader_program_game.Use();
+            f1_shader_program_game.SetLight(lights_game);
+            grass_shader_program_game.SetLight(lights_game);
+        }
 
 
 		//check for errors in shaders
@@ -1253,6 +1320,9 @@ void Application::Run()
         f1_shader_program.CheckCompileError();
         f1_shader_program_game.CheckCompileError();
         sun_shader_program.CheckCompileError();
+        earth_shader_program.CheckCompileError();
+        moon_shader_program.CheckCompileError();
+        shader_program_without_texture.CheckCompileError();
 
 
         // update events

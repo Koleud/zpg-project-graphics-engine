@@ -6,9 +6,9 @@
 class DynamicRotate : public Transformation
 {
 private:
-    glm::vec3 axis;      // ось вращения
-    float speed;         // скорость (в радианах в секунду)
-    float angle;         // текущий угол
+    glm::vec3 axis;
+    float speed;         // rotation speed in radians
+    float angle;         // current angle in radians
 
 public:
     DynamicRotate(const glm::vec3& axis, float speed);

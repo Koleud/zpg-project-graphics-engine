@@ -8,7 +8,7 @@ public:
     GLuint id;
     int width, height, channels;
 
-    Texture(const std::string& path);
+    Texture(const std::string& p);
 
     void Bind(GLuint slot = 0) const;
 };

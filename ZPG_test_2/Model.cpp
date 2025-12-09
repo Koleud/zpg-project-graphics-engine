@@ -27,10 +27,10 @@ Model::Model(const std::vector<float>& points, int vertexCount)
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(0); //position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (GLvoid*)0);
 
-    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(1);  //normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
 }
 
@@ -48,13 +48,13 @@ Model::Model(const std::vector<float>& points, int vertexCount, bool hasUV)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 
-    glEnableVertexAttribArray(0); // position
+    glEnableVertexAttribArray(0); //position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (GLvoid*)0);
 
-    glEnableVertexAttribArray(1); // normal
+    glEnableVertexAttribArray(1); //normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
 
-    glEnableVertexAttribArray(2); // texcoord
+    glEnableVertexAttribArray(2); //texcoord (UV)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 }
 
@@ -68,7 +68,7 @@ Model::Model(const std::string& objPath, const std::string& mtlPath)
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, objPath.c_str(), mtlPath.c_str());
     if (!ret) 
     {
-        printf("Failed to load OBJ: %s\n", err.c_str());
+        printf("Error with load .obj: %s\n", err.c_str());
         return;
     }
 
@@ -99,11 +99,11 @@ Model::Model(const std::string& objPath, const std::string& mtlPath)
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glEnableVertexAttribArray(0); // pos
+    glEnableVertexAttribArray(0); //position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1); // normal
+    glEnableVertexAttribArray(1); //normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(2); // UV
+    glEnableVertexAttribArray(2); //texcoord (UV)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 }
 

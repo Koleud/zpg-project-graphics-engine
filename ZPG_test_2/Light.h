@@ -18,8 +18,8 @@ public:
 
     LightType type;
     glm::vec3 position;     // for Point and Spotlight
-    glm::vec3 direction;    // for Directional and Spotlight
     glm::vec3 color;
+    glm::vec3 direction;    // for Directional and Spotlight
     float intensity;
     float range;
     float cutoff;           // angle for (Spotlight)
@@ -29,7 +29,7 @@ public:
     SceneLight(const glm::vec3& col, float intens); // ambient
     SceneLight(const glm::vec3& pos, const glm::vec3& col, float intens, float rng); // point (we used it)
     SceneLight(const glm::vec3& dir, const glm::vec3& col, float intens); // directional
-    SceneLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& col, float intens, float rng, float cutoffAngle); // spotlight
+    SceneLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& col, float intens, float rng, float angle); // spotlight
 
 
     glm::vec3 GetWorldPosition() const;
